@@ -40,8 +40,6 @@ type Message struct {
 	Body         string
 }
 
-//2006-01-02 15:04:05.999999999-07
-
 var db *sql.DB
 
 func check(err error) {
@@ -344,8 +342,6 @@ func postConversations(c *gin.Context) {
 		check(err)
 	}
 
-	log.Println(conversation.Id)
-
 	res, err = tx.Exec(
 		"INSERT "+
 			"INTO conversations_users (conversation_id, user_id) "+
@@ -356,7 +352,6 @@ func postConversations(c *gin.Context) {
 		user.Id,
 		otherUser.Id,
 	)
-	log.Println(user.Id, otherUser.Id)
 	if err != nil {
 		tx.Rollback()
 		check(err)
