@@ -10,13 +10,18 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 	_ "github.com/heroku/x/hmetrics/onload"
 	_ "github.com/lib/pq"
+	//"github.com/kr/pretty"
 )
+
+var db *sql.DB
 
 type User struct {
 	Id      int
@@ -40,7 +45,13 @@ type Message struct {
 	Body         string
 }
 
-var db *sql.DB
+type PsqlInfo struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	Dbname   string
+}
 
 func check(err error) {
 	if err != nil {
@@ -48,12 +59,30 @@ func check(err error) {
 	}
 }
 
-type PsqlInfo struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	Dbname   string
+func successResponse(data interface{}) gin.H {
+	return gin.H{
+		"status": "success",
+		"data":   data,
+	}
+}
+
+func failResponse(data interface{}) gin.H {
+	return gin.H{
+		"status": "fail",
+		"data":   data,
+	}
+}
+
+func errorResponse(message string, code int, data interface{}) gin.H {
+	response := gin.H{
+		"status":  "error",
+		"message": message,
+		"code":    code,
+	}
+	if data != nil {
+		response["data"] = data
+	}
+	return response
 }
 
 func setupDb(pi PsqlInfo) *sql.DB {
@@ -94,7 +123,7 @@ func postUsers(c *gin.Context) {
 		Email    string `json:"email" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
-	err := c.BindJSON(&json)
+	err := c.ShouldBindJSON(&json)
 	check(err)
 	email, password := json.Email, json.Password
 
@@ -123,20 +152,34 @@ func postUsers(c *gin.Context) {
 }
 
 func postAuthenticate(c *gin.Context) {
-	var json struct {
+	invalidCredResponse := failResponse(gin.H{"message": "invalid email/password"})
+
+	var params struct {
 		Email    string `json:"email" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
-	err := c.BindJSON(&json)
-	check(err)
-	email, password := json.Email, json.Password
+	err := c.ShouldBindJSON(&params)
+	switch err.(type) {
+	case *json.SyntaxError:
+		c.JSON(http.StatusBadRequest, errorResponse("JSON syntax error", 1, nil))
+		return
+	case validator.ValidationErrors: // TODO: make this case work
+		c.JSON(http.StatusForbidden, invalidCredResponse)
+		return
+	case nil:
+	default:
+		c.JSON(http.StatusBadRequest, errorResponse("Could not parse request body", 2, nil))
+		return
+	}
+	email, password := params.Email, params.Password
 
-	var userId int
+	user := new(User)
 	hashedPassword := hashPassword(password)
-	err = db.QueryRow("SELECT id FROM users WHERE email = $1 AND password = $2",
-		email, hashedPassword).Scan(&userId)
+	err = db.QueryRow(
+		"SELECT id, email, name FROM users WHERE email = $1 AND password = $2",
+		email, hashedPassword).Scan(&user.Id, &user.Email, &user.Name)
 	if err == sql.ErrNoRows {
-		c.JSON(http.StatusForbidden, gin.H{"error": "invalid email/password"})
+		c.JSON(http.StatusForbidden, invalidCredResponse)
 		return
 	} else if err != nil {
 		check(err)
@@ -147,18 +190,26 @@ func postAuthenticate(c *gin.Context) {
 	check(err)
 	authKey := base64.URLEncoding.EncodeToString(randBytes)
 
-	res, err := db.Exec("INSERT INTO auth_keys (auth_key, user_id, created, accessed) "+
-		"VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-		authKey, userId)
+	res, err := db.Exec(
+		"INSERT INTO auth_keys (auth_key, user_id, created, accessed) "+
+			"VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+		authKey, user.Id)
 	check(err)
 	rowCount, err := res.RowsAffected()
 	check(err)
 	if rowCount == 0 {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not authenticate"})
+		c.JSON(http.StatusInternalServerError, errorResponse("could not authenticate", 2, nil))
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"auth_key": authKey})
+	c.JSON(http.StatusCreated, successResponse(gin.H{
+		"auth_key": authKey,
+		"user": gin.H{
+			"id":    user.Id,
+			"email": user.Email,
+			"name":  user.Name,
+		},
+	}))
 }
 
 func getConversations(c *gin.Context) {
@@ -282,7 +333,7 @@ func postConversations(c *gin.Context) {
 		UserId  int    `json:"userId" binding:"required"`
 		Message string `json:"message" binding:"required"`
 	}
-	err = c.BindJSON(&json)
+	err = c.ShouldBindJSON(&json)
 	check(err)
 	otherUser.Id, message.Body = json.UserId, json.Message
 
@@ -411,7 +462,7 @@ func postConversationsId(c *gin.Context) {
 	var json struct {
 		Message string `json:"message" binding:"required"`
 	}
-	err = c.BindJSON(&json)
+	err = c.ShouldBindJSON(&json)
 	check(err)
 	message.Body = json.Message
 
