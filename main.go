@@ -18,7 +18,7 @@ import (
 	"github.com/go-playground/validator"
 	_ "github.com/heroku/x/hmetrics/onload"
 	_ "github.com/lib/pq"
-	//"github.com/kr/pretty"
+	"github.com/kr/pretty"
 )
 
 var db *sql.DB
@@ -53,6 +53,25 @@ type PsqlInfo struct {
 	Dbname   string
 }
 
+type AppError struct {
+  Message string
+  Code int
+  Data interface{}
+}
+
+//type FailResponse struct {
+  //HttpStatus int
+  //Data interface{}
+//}
+
+func (e AppError ) Error() string {
+  return e.Message
+}
+
+//func (e FailResponse) Error() string {
+  //return e.Message
+//}
+
 func check(err error) {
 	if err != nil {
 		log.Panic(err)
@@ -83,6 +102,33 @@ func errorResponse(message string, code int, data interface{}) gin.H {
 		response["data"] = data
 	}
 	return response
+}
+
+func ErrorHandler() gin.HandlerFunc {
+  return func(c *gin.Context) {
+    c.Next()
+
+    if c.Errors != nil && len(c.Errors) > 0 {
+      err := c.Errors[0].Err
+      switch err.(type) {
+      case AppError:
+        appErr := err.(AppError)
+        c.JSON(c.Writer.Status(), errorResponse(appErr.Message, appErr.Code, appErr.Data))
+      //case FailResponse:
+        //c.JSON(err.HttpStatus, failResponse(err.Data))
+      default:
+        c.JSON(http.StatusInternalServerError,
+          errorResponse("500: An internal error was encountered.", 1, nil))
+      }
+    }
+  }
+}
+
+func JSONContentType() gin.HandlerFunc {
+  return func(c *gin.Context) {
+    c.Writer.Header().Set("Content-Type", "application/json; charset=utf-8")
+    c.Next()
+  }
 }
 
 func setupDb(pi PsqlInfo) *sql.DB {
@@ -152,7 +198,7 @@ func postUsers(c *gin.Context) {
 }
 
 func postAuthenticate(c *gin.Context) {
-	invalidCredResponse := failResponse(gin.H{"message": "invalid email/password"})
+	invalidCredError := AppError{"invalid email/password", 3, nil}
 
 	var params struct {
 		Email    string `json:"email" binding:"required"`
@@ -160,15 +206,15 @@ func postAuthenticate(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&params)
 	switch err.(type) {
+	case nil:
 	case *json.SyntaxError:
-		c.JSON(http.StatusBadRequest, errorResponse("JSON syntax error", 1, nil))
+		c.AbortWithError(http.StatusBadRequest, AppError{"JSON syntax error", 2, nil})
 		return
 	case validator.ValidationErrors: // TODO: make this case work
-		c.JSON(http.StatusForbidden, invalidCredResponse)
+		c.AbortWithError(http.StatusForbidden, invalidCredError)
 		return
-	case nil:
 	default:
-		c.JSON(http.StatusBadRequest, errorResponse("Could not parse request body", 2, nil))
+		c.AbortWithError(http.StatusBadRequest, AppError{"Could not parse request body", 4, nil})
 		return
 	}
 	email, password := params.Email, params.Password
@@ -179,7 +225,7 @@ func postAuthenticate(c *gin.Context) {
 		"SELECT id, email, name FROM users WHERE email = $1 AND password = $2",
 		email, hashedPassword).Scan(&user.Id, &user.Email, &user.Name)
 	if err == sql.ErrNoRows {
-		c.JSON(http.StatusForbidden, invalidCredResponse)
+		c.AbortWithError(http.StatusForbidden, invalidCredError)
 		return
 	} else if err != nil {
 		check(err)
@@ -198,7 +244,8 @@ func postAuthenticate(c *gin.Context) {
 	rowCount, err := res.RowsAffected()
 	check(err)
 	if rowCount == 0 {
-		c.JSON(http.StatusInternalServerError, errorResponse("could not authenticate", 2, nil))
+		c.AbortWithError(http.StatusInternalServerError,
+      AppError{"could not authenticate", 4, nil})
 		return
 	}
 
@@ -479,6 +526,10 @@ func postConversationsId(c *gin.Context) {
 }
 
 func main() {
+  if false {
+    pretty.Println()
+  }
+
 	psqlInfo := PsqlInfo{
 		Host:     "localhost",
 		Port:     5432,
@@ -496,6 +547,8 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+  router.Use(JSONContentType())
+  router.Use(ErrorHandler())
 	//router.Static("/static", "static")
 
 	router.POST("/users", postUsers)
