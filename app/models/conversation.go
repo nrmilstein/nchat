@@ -5,8 +5,8 @@ import (
 )
 
 type Conversation struct {
-  Id       int
-  Created  time.Time
-  Users    []*User
-  Messages []*Message
+	Id       int
+	Created  time.Time
+	Users    []*User
+	Messages []*Message
 }

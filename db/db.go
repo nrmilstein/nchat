@@ -1,9 +1,9 @@
 package db
 
 import (
-	"fmt"
 	"database/sql"
-	
+	"fmt"
+
 	_ "github.com/lib/pq"
 
 	"neal-chat/utils"

@@ -1,15 +1,15 @@
 package controllers
 
 import (
-	"net/http"
 	"database/sql"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"neal-chat/app/models"
-	"neal-chat/utils"
 	"neal-chat/db"
+	"neal-chat/utils"
 )
 
 func PostUsers(c *gin.Context) {

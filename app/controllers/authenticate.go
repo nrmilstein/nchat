@@ -1,18 +1,18 @@
 package controllers
 
 import (
-  "net/http"
-	"encoding/json"
 	"crypto/rand"
-	"encoding/base64"
 	"database/sql"
+	"encoding/base64"
+	"encoding/json"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 
 	"neal-chat/app/models"
-	"neal-chat/utils"
 	"neal-chat/db"
+	"neal-chat/utils"
 )
 
 func PostAuthenticate(c *gin.Context) {
@@ -64,7 +64,7 @@ func PostAuthenticate(c *gin.Context) {
 	utils.Check(err)
 	if rowCount == 0 {
 		c.AbortWithError(http.StatusInternalServerError,
-      utils.AppError{"could not authenticate", 4, nil})
+			utils.AppError{"could not authenticate", 4, nil})
 		return
 	}
 

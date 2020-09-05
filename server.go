@@ -6,10 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/heroku/x/hmetrics/onload"
 
-  "neal-chat/app/controllers"
-  "neal-chat/app/middlewares"
-  "neal-chat/utils"
-  "neal-chat/db"
+	"neal-chat/app/controllers"
+	"neal-chat/app/middlewares"
+	"neal-chat/db"
+	"neal-chat/utils"
 )
 
 func main() {
@@ -30,8 +30,8 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
-  router.Use(middlewares.JSONContentType())
-  router.Use(middlewares.ErrorHandler())
+	router.Use(middlewares.JSONContentType())
+	router.Use(middlewares.ErrorHandler())
 	//router.Static("/static", "static")
 
 	router.POST("/users", controllers.PostUsers)

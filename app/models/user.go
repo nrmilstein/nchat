@@ -1,11 +1,11 @@
 package models
 
 import (
-	"errors"
 	"crypto/sha256"
 	"database/sql"
-	"time"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -19,7 +19,6 @@ type User struct {
 	Name    string
 	Created time.Time
 }
-
 
 func GetUserFromKey(key string) (*User, error) {
 	db := db.GetDb()
