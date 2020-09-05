@@ -23,7 +23,7 @@ func GetDb() *sql.DB {
 	return db
 }
 
-func SetupDb(pi PsqlInfo) {
+func InitDb(pi PsqlInfo) {
 	connectionStr := fmt.Sprintf("host=%s port=%d user=%s password=%s "+
 		"dbname=%s sslmode=disable",
 		pi.Host, pi.Port, pi.User, pi.Password, pi.Dbname)

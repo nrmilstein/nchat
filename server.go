@@ -21,7 +21,7 @@ func main() {
 		Dbname:   "neal_chat",
 	}
 
-	db.SetupDb(psqlInfo)
+	db.InitDb(psqlInfo)
 	defer db.CloseDb()
 
 	err := db.GetDb().Ping()
