@@ -2,10 +2,12 @@ package controllers
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 
 	"neal-chat/app/models"
 	"neal-chat/db"
@@ -14,12 +16,15 @@ import (
 
 func GetConversations(c *gin.Context) {
 	db := db.GetDb()
+
 	user, err := models.GetUserFromRequest(c)
-	utils.Check(err)
+	if err != nil {
+		utils.AbortErrForbidden(c)
+		return
+	}
 
 	rows, err := db.Query(
-		"SELECT conversations.id, conversations.created, users.id, users.email, users.name, "+
-			"users.created "+
+		"SELECT my_conversations.id, users.id, users.email, users.name "+
 			"FROM "+
 			"(SELECT conversations_users.conversation_id AS id "+
 			"FROM conversations_users "+
@@ -27,37 +32,63 @@ func GetConversations(c *gin.Context) {
 			"JOIN conversations_users "+
 			"ON my_conversations.id = conversations_users.conversation_id "+
 			"JOIN users ON conversations_users.user_id = users.id "+
-			"JOIN conversations ON conversations_users.conversation_id = conversations.id "+
 			"WHERE users.id != $1",
 		user.Id)
 	defer rows.Close()
-	utils.Check(err)
+	if err != nil {
+		utils.AbortErrServer(c)
+		return
+	}
 
-	conversations := []*models.Conversation{}
+	conversations := []gin.H{}
 	for rows.Next() {
 		conversation := new(models.Conversation)
 		otherUser := new(models.User)
 
-		err = rows.Scan(&conversation.Id, &conversation.Created,
-			&otherUser.Id, &otherUser.Name, &otherUser.Email, &otherUser.Created)
-		utils.Check(err)
+		err = rows.Scan(&conversation.Id, &otherUser.Id, &otherUser.Name, &otherUser.Email)
+		if err != nil {
+			utils.AbortErrServer(c)
+			return
+		}
 
-		conversation.Users = []*models.User{user, otherUser}
-		conversations = append(conversations, conversation)
+		conversations = append(conversations, gin.H{
+			"id": conversation.Id,
+			"users": []gin.H{
+				{
+					"id":    user.Id,
+					"email": user.Email,
+					"name":  user.Name,
+				},
+				{
+					"id":    otherUser.Id,
+					"email": otherUser.Email,
+					"name":  otherUser.Name,
+				},
+			},
+		})
 	}
-	utils.Check(rows.Err())
+	if err = rows.Err(); err != nil {
+		utils.AbortErrServer(c)
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"conversations": conversations})
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{"conversations": conversations}))
 }
 
 func GetConversation(c *gin.Context) {
 	db := db.GetDb()
 
-	conversationId, err := strconv.Atoi(c.Param("id"))
-	utils.Check(err)
-
 	user, err := models.GetUserFromRequest(c)
-	utils.Check(err)
+	if err != nil {
+		utils.AbortErrForbidden(c)
+		return
+	}
+
+	conversationId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		utils.AbortErrServer(c)
+		return
+	}
 
 	participants, err := db.Query(
 		"SELECT conversations.id, conversations.created, "+
@@ -74,59 +105,102 @@ func GetConversation(c *gin.Context) {
 		user.Id,
 		conversationId)
 	defer participants.Close()
-	utils.Check(err)
+	if err != nil {
+		utils.AbortErrServer(c)
+		return
+	}
 
 	conversation := new(models.Conversation)
 	for participants.Next() {
 		participant := new(models.User)
 		err = participants.Scan(&conversation.Id, &conversation.Created,
 			&participant.Id, &participant.Email, &participant.Name, &participant.Created)
-		utils.Check(err)
+		if err != nil {
+			utils.AbortErrServer(c)
+			return
+		}
 
 		conversation.Users = append(conversation.Users, participant)
 	}
-	utils.Check(participants.Err())
+	if err = participants.Err(); err != nil {
+		utils.AbortErrServer(c)
+		return
+	}
 
 	if len(conversation.Users) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "conversation not found"})
+		c.AbortWithError(http.StatusNotFound,
+			utils.AppError{"Conversation not found.", 1, nil})
 		return
 	}
 
 	messages, err := db.Query(
 		"SELECT messages.id, messages.sent, messages.body, users.id "+
-			"FROM conversations_users "+
-			"JOIN conversations ON conversations.id = conversations_users.conversation_id "+
-			"JOIN messages ON messages.conversation_id = conversations.id "+
+			"FROM messages "+
 			"JOIN users ON messages.user_id = users.id "+
-			"WHERE "+
-			"conversations_users.user_id = $1 AND "+
-			"conversations_users.conversation_id = $2 "+
+			"WHERE messages.conversation_id = $1 "+
 			"ORDER BY messages.sent ASC ",
-		user.Id,
 		conversationId)
 	defer messages.Close()
-	utils.Check(err)
+	if err != nil {
+		utils.AbortErrServer(c)
+		return
+	}
 
 	for messages.Next() {
 		message := new(models.Message)
 		message.User = new(models.User)
 		err = messages.Scan(&message.Id, &message.Sent, &message.Body,
 			&message.User.Id)
-		utils.Check(err)
+		if err != nil {
+			utils.AbortErrServer(c)
+			return
+		}
 
-		//message.Conversation = conversation
 		conversation.Messages = append(conversation.Messages, message)
 	}
-	utils.Check(messages.Err())
+	if err = messages.Err(); err != nil {
+		utils.AbortErrServer(c)
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"conversation": conversation})
+	usersJson := []gin.H{}
+	for i := range conversation.Users {
+		usersJson = append(usersJson, gin.H{
+			"id":    conversation.Users[i].Id,
+			"email": conversation.Users[i].Email,
+			"name":  conversation.Users[i].Name,
+		})
+	}
+
+	messagesJson := []gin.H{}
+	for i := range conversation.Messages {
+		messagesJson = append(messagesJson, gin.H{
+			"id":     conversation.Messages[i].Id,
+			"userId": conversation.Messages[i].User.Id,
+			"sent":   conversation.Messages[i].Sent,
+			"body":   conversation.Messages[i].Body,
+		})
+	}
+
+	conversationJson := gin.H{
+		"id":       conversation.Id,
+		"created":  conversation.Created,
+		"users":    usersJson,
+		"messages": messagesJson,
+	}
+
+	c.JSON(http.StatusOK,
+		utils.SuccessResponse(gin.H{"conversation": conversationJson}))
 }
 
 func PostConversations(c *gin.Context) {
 	db := db.GetDb()
 
 	user, err := models.GetUserFromRequest(c)
-	utils.Check(err)
+	if err != nil {
+		utils.AbortErrForbidden(c)
+		return
+	}
 
 	otherUser := new(models.User)
 
@@ -134,16 +208,31 @@ func PostConversations(c *gin.Context) {
 	message := new(models.Message)
 	conversation.Messages = append(conversation.Messages, message)
 
-	var json struct {
+	var params struct {
 		UserId  int    `json:"userId" binding:"required"`
 		Message string `json:"message" binding:"required"`
 	}
-	err = c.ShouldBindJSON(&json)
-	utils.Check(err)
-	otherUser.Id, message.Body = json.UserId, json.Message
+	err = c.ShouldBindJSON(&params)
+	switch err.(type) {
+	case nil:
+	case *json.SyntaxError:
+		c.AbortWithError(http.StatusBadRequest,
+			utils.AppError{"JSON syntax error.", 2, nil})
+		return
+	case validator.ValidationErrors: // TODO: make this case work
+		c.AbortWithError(http.StatusUnauthorized,
+			utils.AppError{"Missing parameters.", 3, nil})
+		return
+	default:
+		c.AbortWithError(http.StatusBadRequest,
+			utils.AppError{"Could not parse request body.", 4, nil})
+		return
+	}
+	otherUser.Id, message.Body = params.UserId, params.Message
 
 	if otherUser.Id == user.Id {
-		c.JSON(http.StatusConflict, gin.H{"error": "cannot create conversation with self"})
+		c.AbortWithError(http.StatusConflict,
+			utils.AppError{"Cannot create conversation with self.", 1, nil})
 		return
 	}
 
@@ -152,7 +241,8 @@ func PostConversations(c *gin.Context) {
 		otherUser.Id,
 	).Scan(&otherUser.Email, &otherUser.Name, &otherUser.Created)
 	if err == sql.ErrNoRows {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "Target user does not exist"})
+		c.AbortWithError(http.StatusUnprocessableEntity,
+			utils.AppError{"Recipient user does not exist", 5, nil})
 		return
 	}
 
@@ -169,13 +259,21 @@ func PostConversations(c *gin.Context) {
 		otherUser.Id,
 	).Scan(&conversation.Id)
 	if err != sql.ErrNoRows {
-		utils.Check(err)
-		c.JSON(http.StatusConflict, gin.H{"error": "conversation already exists"})
-		return
+		if err == nil {
+			c.AbortWithError(http.StatusConflict,
+				utils.AppError{"Conversation already exists.", 6, nil})
+			return
+		} else {
+			utils.AbortErrServer(c)
+			return
+		}
 	}
 
 	tx, err := db.Begin()
-	utils.Check(err)
+	if err != nil {
+		utils.AbortErrServer(c)
+		return
+	}
 
 	res, err := tx.Exec(
 		"SET CONSTRAINTS " +
@@ -184,7 +282,8 @@ func PostConversations(c *gin.Context) {
 	)
 	if err != nil {
 		tx.Rollback()
-		utils.Check(err)
+		utils.AbortErrServer(c)
+		return
 	}
 
 	err = tx.QueryRow(
@@ -195,7 +294,8 @@ func PostConversations(c *gin.Context) {
 	).Scan(&conversation.Id, &conversation.Created)
 	if err != nil {
 		tx.Rollback()
-		utils.Check(err)
+		utils.AbortErrServer(c)
+		return
 	}
 
 	res, err = tx.Exec(
@@ -210,13 +310,13 @@ func PostConversations(c *gin.Context) {
 	)
 	if err != nil {
 		tx.Rollback()
-		utils.Check(err)
+		utils.AbortErrServer(c)
+		return
 	}
 	rowsAffected, err := res.RowsAffected()
-	utils.Check(err)
-	if rowsAffected == 0 {
+	if err != nil || rowsAffected == 0 {
 		tx.Rollback()
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not add conversation"})
+		utils.AbortErrServer(c)
 		return
 	}
 
@@ -231,25 +331,69 @@ func PostConversations(c *gin.Context) {
 	).Scan(&message.Id, &message.Sent)
 	if err != nil {
 		tx.Rollback()
-		utils.Check(err)
+		utils.AbortErrServer(c)
+		return
 	}
 
 	err = tx.Commit()
-	utils.Check(err)
+	if err != nil {
+		utils.AbortErrServer(c)
+		return
+	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"success": "conversation added", "conversation": conversation,
-	})
+	conversationJson := gin.H{
+		"id":      conversation.Id,
+		"created": conversation.Created,
+		"messages": []gin.H{
+			{
+				"id":     message.Id,
+				"userId": user.Id,
+				"sent":   message.Sent,
+				"body":   message.Body,
+			},
+		},
+	}
+
+	c.JSON(http.StatusCreated,
+		utils.SuccessResponse(gin.H{"conversation": conversationJson}))
 }
 
 func PostConversation(c *gin.Context) {
 	db := db.GetDb()
 
-	conversationId, err := strconv.Atoi(c.Param("id"))
-	utils.Check(err)
-
 	user, err := models.GetUserFromRequest(c)
-	utils.Check(err)
+	if err != nil {
+		utils.AbortErrForbidden(c)
+		return
+	}
+
+	conversationId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		utils.AbortErrServer(c)
+		return
+	}
+
+	message := new(models.Message)
+	var params struct {
+		Message string `json:"message" binding:"required"`
+	}
+	err = c.ShouldBindJSON(&params)
+	switch err.(type) {
+	case nil:
+	case *json.SyntaxError:
+		c.AbortWithError(http.StatusBadRequest,
+			utils.AppError{"JSON syntax error.", 1, nil})
+		return
+	case validator.ValidationErrors: // TODO: make this case work
+		c.AbortWithError(http.StatusUnauthorized,
+			utils.AppError{"Missing parameters.", 2, nil})
+		return
+	default:
+		c.AbortWithError(http.StatusBadRequest,
+			utils.AppError{"Could not parse request body.", 3, nil})
+		return
+	}
+	message.Body = params.Message
 
 	var conversationsUsersId int
 	err = db.QueryRow(
@@ -260,27 +404,29 @@ func PostConversation(c *gin.Context) {
 		conversationId,
 		user.Id).Scan(&conversationsUsersId)
 	if err == sql.ErrNoRows {
-		c.JSON(http.StatusNotFound, gin.H{"error": "conversation not found"})
+		c.AbortWithError(http.StatusNotFound, utils.AppError{"Conversation does not exist.", 1, nil})
 		return
 	}
 
-	message := new(models.Message)
-
-	var json struct {
-		Message string `json:"message" binding:"required"`
-	}
-	err = c.ShouldBindJSON(&json)
-	utils.Check(err)
-	message.Body = json.Message
-
 	err = db.QueryRow(
 		"INSERT INTO messages(conversation_id, user_id, sent, body) "+
-			"VALUES($1, $2, CURRENT_TIMESTAMP, $3) RETURNING messages.id",
+			"VALUES($1, $2, CURRENT_TIMESTAMP, $3) RETURNING messages.id, messages.sent",
 		conversationId,
 		user.Id,
 		message.Body,
-	).Scan(&message.Id)
-	utils.Check(err)
+	).Scan(&message.Id, &message.Sent)
+	if err != nil {
+		utils.AbortErrServer(c)
+		return
+	}
 
-	c.JSON(http.StatusCreated, gin.H{"success": "message sent", "message": message})
+	messageJson := gin.H{
+		"id":             message.Id,
+		"conversationId": conversationId,
+		"userId":         user.Id,
+		"sent":           message.Sent,
+		"body":           message.Body,
+	}
+
+	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"message": messageJson}))
 }

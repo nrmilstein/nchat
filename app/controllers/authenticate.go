@@ -17,7 +17,7 @@ import (
 
 func PostAuthenticate(c *gin.Context) {
 	db := db.GetDb()
-	invalidCredError := utils.AppError{"invalid email/password", 3, nil}
+	invalidCredError := utils.AppError{"Invalid email/password.", 1, nil}
 
 	var params struct {
 		Email    string `json:"email" binding:"required"`
@@ -30,10 +30,11 @@ func PostAuthenticate(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, utils.AppError{"JSON syntax error", 2, nil})
 		return
 	case validator.ValidationErrors: // TODO: make this case work
-		c.AbortWithError(http.StatusForbidden, invalidCredError)
+		c.AbortWithError(http.StatusUnauthorized, invalidCredError)
 		return
 	default:
-		c.AbortWithError(http.StatusBadRequest, utils.AppError{"Could not parse request body", 4, nil})
+		c.AbortWithError(http.StatusBadRequest,
+			utils.AppError{"Could not parse request body", 3, nil})
 		return
 	}
 	email, password := params.Email, params.Password
@@ -44,7 +45,7 @@ func PostAuthenticate(c *gin.Context) {
 		"SELECT id, email, name FROM users WHERE email = $1 AND password = $2",
 		email, hashedPassword).Scan(&user.Id, &user.Email, &user.Name)
 	if err == sql.ErrNoRows {
-		c.AbortWithError(http.StatusForbidden, invalidCredError)
+		c.AbortWithError(http.StatusUnauthorized, invalidCredError)
 		return
 	} else if err != nil {
 		utils.Check(err)
@@ -64,7 +65,7 @@ func PostAuthenticate(c *gin.Context) {
 	utils.Check(err)
 	if rowCount == 0 {
 		c.AbortWithError(http.StatusInternalServerError,
-			utils.AppError{"could not authenticate", 4, nil})
+			utils.AppError{"Could not authenticate.", 4, nil})
 		return
 	}
 

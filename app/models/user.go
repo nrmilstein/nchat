@@ -10,8 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"neal-chat/db"
-	"neal-chat/utils"
 )
+
+var ErrUserNotFound = errors.New("No user found")
 
 type User struct {
 	Id      int
@@ -30,9 +31,10 @@ func GetUserFromKey(key string) (*User, error) {
 		key,
 	).Scan(&user.Id, &user.Email, &user.Name, &user.Created)
 	if err == sql.ErrNoRows {
-		return nil, errors.New("No user found")
+		return nil, ErrUserNotFound
+	} else if err != nil {
+		return nil, err
 	}
-	utils.Check(err)
 	return user, nil
 }
 
