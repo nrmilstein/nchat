@@ -23,6 +23,7 @@ func PostAuthenticate(c *gin.Context) {
 		Email    string `json:"email" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
+
 	err := c.ShouldBindJSON(&params)
 	switch err.(type) {
 	case nil:
@@ -37,10 +38,12 @@ func PostAuthenticate(c *gin.Context) {
 			utils.AppError{"Could not parse request body", 3, nil})
 		return
 	}
+
 	email, password := params.Email, params.Password
 
 	user := new(models.User)
 	hashedPassword := models.HashPassword(password)
+
 	err = db.QueryRow(
 		"SELECT id, email, name FROM users WHERE email = $1 AND password = $2",
 		email, hashedPassword).Scan(&user.Id, &user.Email, &user.Name)

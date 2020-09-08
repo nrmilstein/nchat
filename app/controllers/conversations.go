@@ -212,6 +212,7 @@ func PostConversations(c *gin.Context) {
 		UserId  int    `json:"userId" binding:"required"`
 		Message string `json:"message" binding:"required"`
 	}
+
 	err = c.ShouldBindJSON(&params)
 	switch err.(type) {
 	case nil:
@@ -228,6 +229,7 @@ func PostConversations(c *gin.Context) {
 			utils.AppError{"Could not parse request body.", 4, nil})
 		return
 	}
+
 	otherUser.Id, message.Body = params.UserId, params.Message
 
 	if otherUser.Id == user.Id {
@@ -377,6 +379,7 @@ func PostConversation(c *gin.Context) {
 	var params struct {
 		Message string `json:"message" binding:"required"`
 	}
+
 	err = c.ShouldBindJSON(&params)
 	switch err.(type) {
 	case nil:
@@ -393,6 +396,7 @@ func PostConversation(c *gin.Context) {
 			utils.AppError{"Could not parse request body.", 3, nil})
 		return
 	}
+
 	message.Body = params.Message
 
 	var conversationsUsersId int

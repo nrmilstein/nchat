@@ -21,6 +21,7 @@ func PostUsers(c *gin.Context) {
 		Email    string `json:"email" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
+
 	err := c.ShouldBindJSON(&params)
 	switch err.(type) {
 	case nil:
@@ -37,6 +38,7 @@ func PostUsers(c *gin.Context) {
 			utils.AppError{"Could not parse request body.", 3, nil})
 		return
 	}
+
 	email, password := params.Email, params.Password
 
 	var id int
