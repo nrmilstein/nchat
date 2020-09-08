@@ -12,7 +12,7 @@ import (
 	"neal-chat/db"
 )
 
-var ErrUserNotFound = errors.New("No user found")
+var ErrUserNotFound = errors.New("No user found.")
 
 type User struct {
 	Id      int

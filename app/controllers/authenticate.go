@@ -48,24 +48,29 @@ func PostAuthenticate(c *gin.Context) {
 		c.AbortWithError(http.StatusUnauthorized, invalidCredError)
 		return
 	} else if err != nil {
-		utils.Check(err)
+		utils.AbortErrServer(c)
+		return
 	}
 
 	randBytes := make([]byte, 18)
 	_, err = rand.Read(randBytes)
-	utils.Check(err)
+	if err != nil {
+		utils.AbortErrServer(c)
+		return
+	}
 	authKey := base64.URLEncoding.EncodeToString(randBytes)
 
 	res, err := db.Exec(
 		"INSERT INTO auth_keys (auth_key, user_id, created, accessed) "+
 			"VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
 		authKey, user.Id)
-	utils.Check(err)
+	if err != nil {
+		utils.AbortErrServer(c)
+		return
+	}
 	rowCount, err := res.RowsAffected()
-	utils.Check(err)
-	if rowCount == 0 {
-		c.AbortWithError(http.StatusInternalServerError,
-			utils.AppError{"Could not authenticate.", 4, nil})
+	if err != nil || rowCount == 0 {
+		utils.AbortErrServer(c)
 		return
 	}
 
