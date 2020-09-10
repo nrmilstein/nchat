@@ -1,7 +1,7 @@
 package main
 
 import (
-	"strconv"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/heroku/x/hmetrics/onload"
@@ -13,6 +13,12 @@ import (
 )
 
 func main() {
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "5000"
+	}
+
 	psqlInfo := db.PsqlInfo{
 		Host:     "localhost",
 		Port:     5432,
@@ -41,5 +47,5 @@ func main() {
 	router.POST("/conversations", controllers.PostConversations)
 	router.POST("/conversations/:id", controllers.PostConversation)
 
-	router.Run(":" + strconv.Itoa(5000))
+	router.Run(":" + port)
 }
