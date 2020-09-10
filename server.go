@@ -14,20 +14,23 @@ import (
 
 func main() {
 	port := os.Getenv("PORT")
-
 	if port == "" {
 		port = "5000"
 	}
 
-	psqlInfo := db.PsqlInfo{
-		Host:     "localhost",
-		Port:     5432,
-		User:     "nrmilstein",
-		Password: "password",
-		Dbname:   "neal_chat",
+	databaseUrl := os.Getenv("DATABASE_URL")
+	if databaseUrl == "" {
+		psqlInfo := db.PsqlInfo{
+			Host:     "localhost",
+			Port:     5432,
+			User:     "nrmilstein",
+			Password: "password",
+			Dbname:   "neal_chat",
+		}
+		db.InitDbStruct(psqlInfo)
+	} else {
+		db.InitDb(databaseUrl)
 	}
-
-	db.InitDb(psqlInfo)
 	defer db.CloseDb()
 
 	err := db.GetDb().Ping()

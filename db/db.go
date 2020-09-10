@@ -23,14 +23,18 @@ func GetDb() *sql.DB {
 	return db
 }
 
-func InitDb(pi PsqlInfo) {
+func InitDb(connectionStr string) {
+	var err error
+	db, err = sql.Open("postgres", connectionStr)
+	utils.Check(err)
+}
+
+func InitDbStruct(pi PsqlInfo) {
 	connectionStr := fmt.Sprintf("host=%s port=%d user=%s password=%s "+
 		"dbname=%s sslmode=disable",
 		pi.Host, pi.Port, pi.User, pi.Password, pi.Dbname)
 
-	var err error
-	db, err = sql.Open("postgres", connectionStr)
-	utils.Check(err)
+	InitDb(connectionStr)
 }
 
 func CloseDb() {
