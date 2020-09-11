@@ -1,4 +1,4 @@
-module neal-chat
+module nchat
 
 go 1.14
 

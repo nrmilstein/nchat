@@ -6,7 +6,7 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"neal-chat/utils"
+	"nchat/utils"
 )
 
 var db *sql.DB

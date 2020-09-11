@@ -6,10 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/heroku/x/hmetrics/onload"
 
-	"neal-chat/app/controllers"
-	"neal-chat/app/middlewares"
-	"neal-chat/db"
-	"neal-chat/utils"
+	"nchat/app/controllers"
+	"nchat/app/middlewares"
+	"nchat/db"
+	"nchat/utils"
 )
 
 func main() {
@@ -25,7 +25,7 @@ func main() {
 			Port:     5432,
 			User:     "nrmilstein",
 			Password: "password",
-			Dbname:   "neal_chat",
+			Dbname:   "nchat",
 		}
 		db.InitDbStruct(psqlInfo)
 	} else {

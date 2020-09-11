@@ -10,9 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 
-	"neal-chat/app/models"
-	"neal-chat/db"
-	"neal-chat/utils"
+	"nchat/app/models"
+	"nchat/db"
+	"nchat/utils"
 )
 
 func PostAuthenticate(c *gin.Context) {
@@ -30,7 +30,7 @@ func PostAuthenticate(c *gin.Context) {
 	case *json.SyntaxError:
 		c.AbortWithError(http.StatusBadRequest, utils.AppError{"JSON syntax error", 2, nil})
 		return
-	case validator.ValidationErrors: // TODO: make this case work
+	case validator.ValidationErrors:
 		c.AbortWithError(http.StatusUnauthorized, invalidCredError)
 		return
 	default:

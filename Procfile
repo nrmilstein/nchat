@@ -1,1 +1,1 @@
-web: bin/neal-chat
+web: bin/nchat

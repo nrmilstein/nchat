@@ -9,9 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 
-	"neal-chat/app/models"
-	"neal-chat/db"
-	"neal-chat/utils"
+	"nchat/app/models"
+	"nchat/db"
+	"nchat/utils"
 )
 
 func PostUsers(c *gin.Context) {
@@ -29,7 +29,7 @@ func PostUsers(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest,
 			utils.AppError{"JSON syntax error.", 1, nil})
 		return
-	case validator.ValidationErrors: // TODO: make this case work
+	case validator.ValidationErrors:
 		c.AbortWithError(http.StatusUnauthorized,
 			utils.AppError{"Missing parameters.", 2, nil})
 		return
