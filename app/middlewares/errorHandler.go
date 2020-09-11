@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"nchat/utils"
+	"github.com/nrmilstein/nchat/utils"
 )
 
 func ErrorHandler() gin.HandlerFunc {

@@ -9,9 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 
-	"nchat/app/models"
-	"nchat/db"
-	"nchat/utils"
+	"github.com/nrmilstein/nchat/app/models"
+	"github.com/nrmilstein/nchat/db"
+	"github.com/nrmilstein/nchat/utils"
 )
 
 func PostUsers(c *gin.Context) {

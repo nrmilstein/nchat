@@ -6,10 +6,10 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/heroku/x/hmetrics/onload"
 
-	"nchat/app/controllers"
-	"nchat/app/middlewares"
-	"nchat/db"
-	"nchat/utils"
+	"github.com/nrmilstein/nchat/app/controllers"
+	"github.com/nrmilstein/nchat/app/middlewares"
+	"github.com/nrmilstein/nchat/db"
+	"github.com/nrmilstein/nchat/utils"
 )
 
 func main() {

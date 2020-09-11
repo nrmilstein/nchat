@@ -1,4 +1,4 @@
-module nchat
+module github.com/nrmilstein/nchat
 
 go 1.14
 

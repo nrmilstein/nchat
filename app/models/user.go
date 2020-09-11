@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"nchat/db"
+	"github.com/nrmilstein/nchat/db"
 )
 
 var ErrUserNotFound = errors.New("No user found.")
