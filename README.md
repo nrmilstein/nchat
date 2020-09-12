@@ -12,10 +12,11 @@ nchat is a chat api that allows users to send messages to each other.
 
 Parameters:
 
-| Name     | Type   | In   | Description                                         |
-| -------- | ------ | ---- | --------------------------------------------------- |
-| email    | string | body | The email of the user you would like to sign up.    |
-| password | string | body | The password of the user you would like to sign up. |
+| Name     | Type   | In   | Description                                           |
+| -------- | ------ | ---- | ----------------------------------------------------- |
+| email    | string | body | The email of the user you would like to register.     |
+| password | string | body | The password of the user you would like to register.  |
+| name     | string | body | The name of the user you would like to sign register. |
 
 Sample response:
 
@@ -28,7 +29,7 @@ Sample response:
         "created": "2020-09-12T17:12:45.170484+02:00",
         "email": "user@example.com",
         "id": 14,
-        "name:": ""
+        "name:": "User McUserface"
     }
 }
 ```
@@ -57,7 +58,7 @@ Sample response:
         "user": {
             "email": "user@example.com",
             "id": 14,
-            "name": ""
+            "name": "User McUserface"
         }
     },
     "status": "success"
@@ -88,12 +89,12 @@ Sample response:
                     {
                         "email": "user@example.com",
                         "id": 14,
-                        "name": ""
+                        "name": "User McUserface"
                     },
                     {
                         "email": "user2@example.com",
                         "id": 12,
-                        "name": ""
+                        "name": "User McDeeds"
                     }
                 ]
             }
@@ -144,12 +145,12 @@ Sample response:
                 {
                     "email": "user@example.com",
                     "id": 14,
-                    "name": ""
+                    "name": "User McUserface"
                 },
                 {
                     "email": "user2@example.com",
                     "id": 12,
-                    "name": ""
+                    "name": "User McDeeds"
                 }
             ]
         }

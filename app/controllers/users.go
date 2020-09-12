@@ -20,6 +20,7 @@ func PostUsers(c *gin.Context) {
 	var params struct {
 		Email    string `json:"email" binding:"required"`
 		Password string `json:"password" binding:"required"`
+		Name     string `json:"name" binding:"required"`
 	}
 
 	err := c.ShouldBindJSON(&params)
@@ -39,7 +40,7 @@ func PostUsers(c *gin.Context) {
 		return
 	}
 
-	email, password := params.Email, params.Password
+	email, password, name := params.Email, params.Password, params.Name
 
 	var id int
 	err = db.QueryRow("SELECT id FROM users WHERE email = $1", email).Scan(&id)
@@ -61,11 +62,12 @@ func PostUsers(c *gin.Context) {
 		created   time.Time
 	)
 	err = db.QueryRow(
-		"INSERT INTO users(email, password, created) "+
-			"VALUES($1, $2, CURRENT_TIMESTAMP) "+
+		"INSERT INTO users(email, password, name, created) "+
+			"VALUES($1, $2, $3, CURRENT_TIMESTAMP) "+
 			"RETURNING users.id, users.created",
 		email,
 		hashedPassword,
+		name,
 	).Scan(&newUserId, &created)
 	if err != nil {
 		utils.AbortErrServer(c)
@@ -75,7 +77,7 @@ func PostUsers(c *gin.Context) {
 	newUserJson := gin.H{
 		"id":      newUserId,
 		"email":   email,
-		"name:":   "",
+		"name:":   name,
 		"created": created,
 	}
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"user": newUserJson}))
