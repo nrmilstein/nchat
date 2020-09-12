@@ -78,5 +78,5 @@ func PostUsers(c *gin.Context) {
 		"name:":   "",
 		"created": created,
 	}
-	c.JSON(http.StatusCreated, gin.H{"success": "user added", "user": newUserJson})
+	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"user": newUserJson}))
 }
