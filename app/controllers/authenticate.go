@@ -86,3 +86,21 @@ func PostAuthenticate(c *gin.Context) {
 		},
 	}))
 }
+
+func GetAuthenticate(c *gin.Context) {
+	user, err := models.GetUserFromRequest(c)
+	if err != nil {
+		utils.AbortErrForbidden(c)
+		return
+	}
+
+	userJson := gin.H{
+		"user": gin.H{
+			"id":    user.Id,
+			"email": user.Email,
+			"name":  user.Name,
+		},
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(userJson))
+}

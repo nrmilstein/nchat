@@ -45,6 +45,7 @@ func main() {
 
 	router.POST("/users", controllers.PostUsers)
 	router.POST("/authenticate", controllers.PostAuthenticate)
+	router.GET("/authenticate", controllers.GetAuthenticate)
 	router.GET("/conversations", controllers.GetConversations)
 	router.GET("/conversations/:id", controllers.GetConversation)
 	router.POST("/conversations", controllers.PostConversations)

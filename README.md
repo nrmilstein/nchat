@@ -36,7 +36,7 @@ Sample response:
 
 
 
-### Get an authentication key
+### Generate an authentication key
 
 `POST /authenticate`
 
@@ -55,6 +55,35 @@ Sample response:
 {
     "data": {
         "auth_key": "Ozo1SNVJ7vxh0jkGIVfoN0dT",
+        "user": {
+            "email": "user@example.com",
+            "id": 14,
+            "name": "User McUserface"
+        }
+    },
+    "status": "success"
+}
+```
+
+
+
+### Get the authenticated User's details
+
+`GET /authenticate`
+
+Parameters:
+
+| Name      | Type   | In     | Description                            |
+| --------- | ------ | ------ | -------------------------------------- |
+| X-API-KEY | string | header | The API key of the authenticated user. |
+
+Sample response:
+
+`Status: 200 OK`
+
+```json
+{
+    "data": {
         "user": {
             "email": "user@example.com",
             "id": 14,
