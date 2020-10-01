@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -40,7 +41,7 @@ func PostUsers(c *gin.Context) {
 		return
 	}
 
-	email, password, name := params.Email, params.Password, params.Name
+	email, password, name := strings.ToLower(params.Email), params.Password, params.Name
 
 	var id int
 	err = db.QueryRow("SELECT id FROM users WHERE email = $1", email).Scan(&id)
