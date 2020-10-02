@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
@@ -209,7 +210,7 @@ func PostConversations(c *gin.Context) {
 	conversation.Messages = append(conversation.Messages, message)
 
 	var params struct {
-		UserId  int    `json:"userId" binding:"required"`
+		Email   string `json:"email" binding:"required"`
 		Message string `json:"message" binding:"required"`
 	}
 
@@ -230,18 +231,18 @@ func PostConversations(c *gin.Context) {
 		return
 	}
 
-	otherUser.Id, message.Body = params.UserId, params.Message
+	otherUser.Email, message.Body = strings.ToLower(params.Email), params.Message
 
-	if otherUser.Id == user.Id {
+	if otherUser.Email == user.Email {
 		c.AbortWithError(http.StatusConflict,
 			utils.AppError{"Cannot create conversation with self.", 1, nil})
 		return
 	}
 
 	err = db.QueryRow(
-		"SELECT users.email, users.name, users.created FROM users WHERE users.id = $1",
-		otherUser.Id,
-	).Scan(&otherUser.Email, &otherUser.Name, &otherUser.Created)
+		"SELECT users.id, users.name, users.created FROM users WHERE users.email = $1",
+		otherUser.Email,
+	).Scan(&otherUser.Id, &otherUser.Name, &otherUser.Created)
 	if err == sql.ErrNoRows {
 		c.AbortWithError(http.StatusUnprocessableEntity,
 			utils.AppError{"Recipient user does not exist", 5, nil})
