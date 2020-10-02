@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
@@ -39,7 +40,7 @@ func PostAuthenticate(c *gin.Context) {
 		return
 	}
 
-	email, password := params.Email, params.Password
+	email, password := strings.ToLower(params.Email), params.Password
 
 	user := new(models.User)
 	hashedPassword := models.HashPassword(password)
