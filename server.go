@@ -43,13 +43,16 @@ func main() {
 	router.Use(middlewares.ErrorHandler())
 	//router.Static("/static", "static")
 
-	router.POST("/users", controllers.PostUsers)
-	router.POST("/authenticate", controllers.PostAuthenticate)
-	router.GET("/authenticate", controllers.GetAuthenticate)
-	router.GET("/conversations", controllers.GetConversations)
-	router.GET("/conversations/:id", controllers.GetConversation)
-	router.POST("/conversations", controllers.PostConversations)
-	router.POST("/conversations/:id", controllers.PostConversation)
+	api := router.Group("/api/v1")
+	{
+		api.POST("/users", controllers.PostUsers)
+		api.POST("/authenticate", controllers.PostAuthenticate)
+		api.GET("/authenticate", controllers.GetAuthenticate)
+		api.GET("/conversations", controllers.GetConversations)
+		api.GET("/conversations/:id", controllers.GetConversation)
+		api.POST("/conversations", controllers.PostConversations)
+		api.POST("/conversations/:id", controllers.PostConversation)
+	}
 
 	router.Run(":" + port)
 }
