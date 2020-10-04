@@ -26,7 +26,6 @@ Sample response:
 {
     "success": "user added",
     "user": {
-        "created": "2020-09-12T17:12:45.170484+02:00",
         "email": "user@example.com",
         "id": 14,
         "name:": "User McUserface"

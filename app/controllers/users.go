@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
@@ -58,18 +57,15 @@ func PostUsers(c *gin.Context) {
 
 	hashedPassword := models.HashPassword(password)
 
-	var (
-		newUserId int
-		created   time.Time
-	)
+	var newUserId int
 	err = db.QueryRow(
 		"INSERT INTO users(email, password, name, created) "+
 			"VALUES($1, $2, $3, CURRENT_TIMESTAMP) "+
-			"RETURNING users.id, users.created",
+			"RETURNING users.id",
 		email,
 		hashedPassword,
 		name,
-	).Scan(&newUserId, &created)
+	).Scan(&newUserId)
 	if err != nil {
 		utils.AbortErrServer(c)
 		return
@@ -79,7 +75,6 @@ func PostUsers(c *gin.Context) {
 		"id":      newUserId,
 		"email":   email,
 		"name:":   name,
-		"created": created,
 	}
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"user": newUserJson}))
 }

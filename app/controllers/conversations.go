@@ -93,7 +93,7 @@ func GetConversation(c *gin.Context) {
 
 	participants, err := db.Query(
 		"SELECT conversations.id, conversations.created, "+
-			"users.id, users.email, users.name, users.created "+
+			"users.id, users.email, users.name "+
 			"FROM "+
 			"(SELECT conversations_users.conversation_id AS id "+
 			"FROM conversations_users "+
@@ -115,7 +115,7 @@ func GetConversation(c *gin.Context) {
 	for participants.Next() {
 		participant := new(models.User)
 		err = participants.Scan(&conversation.Id, &conversation.Created,
-			&participant.Id, &participant.Email, &participant.Name, &participant.Created)
+			&participant.Id, &participant.Email, &participant.Name)
 		if err != nil {
 			utils.AbortErrServer(c)
 			return
@@ -240,9 +240,9 @@ func PostConversations(c *gin.Context) {
 	}
 
 	err = db.QueryRow(
-		"SELECT users.id, users.name, users.created FROM users WHERE users.email = $1",
+		"SELECT users.id, users.name FROM users WHERE users.email = $1",
 		otherUser.Email,
-	).Scan(&otherUser.Id, &otherUser.Name, &otherUser.Created)
+	).Scan(&otherUser.Id, &otherUser.Name)
 	if err == sql.ErrNoRows {
 		c.AbortWithError(http.StatusUnprocessableEntity,
 			utils.AppError{"Recipient user does not exist", 5, nil})
