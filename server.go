@@ -54,5 +54,7 @@ func main() {
 		api.POST("/conversations/:id", controllers.PostConversation)
 	}
 
+	router.NoRoute(controllers.NoRoute)
+
 	router.Run(":" + port)
 }
