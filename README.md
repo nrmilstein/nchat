@@ -54,7 +54,7 @@ Sample response:
 ```json
 {
     "data": {
-        "auth_key": "Ozo1SNVJ7vxh0jkGIVfoN0dT",
+        "authKey": "Ozo1SNVJ7vxh0jkGIVfoN0dT",
         "user": {
             "email": "user@example.com",
             "id": 14,

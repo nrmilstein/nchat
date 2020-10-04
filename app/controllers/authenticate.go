@@ -79,7 +79,7 @@ func PostAuthenticate(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{
-		"auth_key": authKey,
+		"authKey": authKey,
 		"user": gin.H{
 			"id":    user.Id,
 			"email": user.Email,
