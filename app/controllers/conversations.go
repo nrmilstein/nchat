@@ -46,7 +46,7 @@ func GetConversations(c *gin.Context) {
 		conversation := new(models.Conversation)
 		otherUser := new(models.User)
 
-		err = rows.Scan(&conversation.Id, &otherUser.Id, &otherUser.Name, &otherUser.Email)
+		err = rows.Scan(&conversation.Id, &otherUser.Id, &otherUser.Email, &otherUser.Name)
 		if err != nil {
 			utils.AbortErrServer(c)
 			return
