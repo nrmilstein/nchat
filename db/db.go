@@ -6,7 +6,6 @@ import (
 	_ "github.com/lib/pq"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 
 	"github.com/nrmilstein/nchat/utils"
 )
@@ -28,7 +27,7 @@ func GetDb() *gorm.DB {
 func InitDb(connectionStr string) {
 	var err error
 	db, err = gorm.Open(postgres.Open(connectionStr),
-		&gorm.Config{Logger: logger.Default.LogMode(logger.Info)})
+		&gorm.Config{ /*Logger: logger.Default.LogMode(logger.Info)*/ })
 	utils.Check(err)
 }
 
