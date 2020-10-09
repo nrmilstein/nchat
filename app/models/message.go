@@ -5,9 +5,9 @@ import (
 )
 
 type Message struct {
-	Id           int
-	Conversation *Conversation
-	User         *User
-	Sent         time.Time
-	Body         string
+	ID             int       `gorm:"primaryKey,not null"`
+	UserID         int       `gorm:"not null"`
+	ConversationID int       `gorm:"not null"`
+	CreatedAt      time.Time `gorm:"not null"`
+	Body           string    `gorm:"not null"`
 }

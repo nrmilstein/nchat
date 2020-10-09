@@ -8,4 +8,6 @@ require (
 	github.com/heroku/x v0.0.24
 	github.com/lib/pq v1.7.0
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
+	gorm.io/driver/postgres v1.0.2
+	gorm.io/gorm v1.20.2
 )

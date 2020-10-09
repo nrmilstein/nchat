@@ -2,40 +2,37 @@ package models
 
 import (
 	"crypto/sha256"
-	"database/sql"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
-
 	"github.com/nrmilstein/nchat/db"
+	"gorm.io/gorm"
 )
 
 var ErrUserNotFound = errors.New("No user found.")
 
 type User struct {
-	Id      int
-	Email   string
-	Name    string
-	Created time.Time
+	ID            int            `gorm:"primaryKey,not null"`
+	Email         string         `gorm:"not null"`
+	Password      string         `gorm:"not null"`
+	Name          string         `gorm:"not null"`
+	Conversations []Conversation `gorm:"many2many:conversation_users;"`
+	Messages      []Message
+	CreatedAt     time.Time `gorm:"not null"`
 }
 
 func GetUserFromKey(key string) (*User, error) {
 	db := db.GetDb()
-	user := new(User)
-	err := db.QueryRow(
-		"SELECT users.id, users.email, users.name, users.created "+
-			"FROM auth_keys JOIN users ON auth_keys.user_id = users.id "+
-			"WHERE auth_key = $1",
-		key,
-	).Scan(&user.Id, &user.Email, &user.Name, &user.Created)
-	if err == sql.ErrNoRows {
+	var session Session
+	readSession := db.Joins("User").Take(&session, &Session{Key: key}) // TODO: exclude password
+	if errors.Is(readSession.Error, gorm.ErrRecordNotFound) {
 		return nil, ErrUserNotFound
-	} else if err != nil {
-		return nil, err
+	} else if readSession.Error != nil {
+		return nil, readSession.Error
 	}
-	return user, nil
+	return &session.User, nil
 }
 
 func GetUserFromRequest(c *gin.Context) (*User, error) {

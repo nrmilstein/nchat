@@ -5,8 +5,8 @@ import (
 )
 
 type Conversation struct {
-	Id       int
-	Created  time.Time
-	Users    []*User
-	Messages []*Message
+	ID        int       `gorm:"primaryKey,not null"`
+	CreatedAt time.Time `gorm:"not null"`
+	Users     []User    `gorm:"many2many:conversation_users;"`
+	Messages  []Message
 }

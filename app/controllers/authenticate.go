@@ -2,14 +2,15 @@ package controllers
 
 import (
 	"crypto/rand"
-	"database/sql"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
+	"gorm.io/gorm"
 
 	"github.com/nrmilstein/nchat/app/models"
 	"github.com/nrmilstein/nchat/db"
@@ -41,17 +42,15 @@ func PostAuthenticate(c *gin.Context) {
 	}
 
 	email, password := strings.ToLower(params.Email), params.Password
-
-	user := new(models.User)
 	hashedPassword := models.HashPassword(password)
 
-	err = db.QueryRow(
-		"SELECT id, email, name FROM users WHERE email = $1 AND password = $2",
-		email, hashedPassword).Scan(&user.Id, &user.Email, &user.Name)
-	if err == sql.ErrNoRows {
+	var user models.User
+	readUserResult := db.Take(&user, &models.User{Email: email, Password: hashedPassword})
+
+	if errors.Is(readUserResult.Error, gorm.ErrRecordNotFound) {
 		c.AbortWithError(http.StatusUnauthorized, invalidCredError)
 		return
-	} else if err != nil {
+	} else if readUserResult.Error != nil {
 		utils.AbortErrServer(c)
 		return
 	}
@@ -64,16 +63,17 @@ func PostAuthenticate(c *gin.Context) {
 	}
 	authKey := base64.URLEncoding.EncodeToString(randBytes)
 
-	res, err := db.Exec(
-		"INSERT INTO auth_keys (auth_key, user_id, created, accessed) "+
-			"VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-		authKey, user.Id)
-	if err != nil {
+	session := models.Session{
+		Key:    authKey,
+		UserID: user.ID,
+	}
+	createUserResult := db.Create(&session)
+
+	if createUserResult.Error != nil {
 		utils.AbortErrServer(c)
 		return
 	}
-	rowCount, err := res.RowsAffected()
-	if err != nil || rowCount == 0 {
+	if createUserResult.RowsAffected == 0 {
 		utils.AbortErrServer(c)
 		return
 	}
@@ -81,7 +81,7 @@ func PostAuthenticate(c *gin.Context) {
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{
 		"authKey": authKey,
 		"user": gin.H{
-			"id":    user.Id,
+			"id":    user.ID,
 			"email": user.Email,
 			"name":  user.Name,
 		},
@@ -97,7 +97,7 @@ func GetAuthenticate(c *gin.Context) {
 
 	userJson := gin.H{
 		"user": gin.H{
-			"id":    user.Id,
+			"id":    user.ID,
 			"email": user.Email,
 			"name":  user.Name,
 		},

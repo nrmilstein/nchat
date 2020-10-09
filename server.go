@@ -8,6 +8,7 @@ import (
 
 	"github.com/nrmilstein/nchat/app/controllers"
 	"github.com/nrmilstein/nchat/app/middlewares"
+	"github.com/nrmilstein/nchat/app/models"
 	"github.com/nrmilstein/nchat/db"
 	"github.com/nrmilstein/nchat/utils"
 )
@@ -31,9 +32,15 @@ func main() {
 	} else {
 		db.InitDb(databaseUrl)
 	}
-	defer db.CloseDb()
 
-	err := db.GetDb().Ping()
+	db.GetDb()
+
+	err := db.GetDb().AutoMigrate(
+		&models.Session{},
+		&models.Conversation{},
+		&models.Message{},
+		&models.User{},
+	)
 	utils.Check(err)
 
 	router := gin.New()

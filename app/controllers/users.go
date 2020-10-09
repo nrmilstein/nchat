@@ -1,17 +1,16 @@
 package controllers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
-
 	"github.com/nrmilstein/nchat/app/models"
 	"github.com/nrmilstein/nchat/db"
 	"github.com/nrmilstein/nchat/utils"
+	"gorm.io/gorm"
 )
 
 func PostUsers(c *gin.Context) {
@@ -42,10 +41,10 @@ func PostUsers(c *gin.Context) {
 
 	email, password, name := strings.ToLower(params.Email), params.Password, params.Name
 
-	var id int
-	err = db.QueryRow("SELECT id FROM users WHERE email = $1", email).Scan(&id)
-	if err != sql.ErrNoRows {
-		if err == nil {
+	var user models.User
+	readUserResult := db.Take(&user, &models.User{Email: email})
+	if readUserResult.Error != gorm.ErrRecordNotFound {
+		if readUserResult.Error == nil {
 			c.AbortWithError(http.StatusConflict,
 				utils.AppError{"Email already registered.", 4, nil})
 			return
@@ -57,24 +56,21 @@ func PostUsers(c *gin.Context) {
 
 	hashedPassword := models.HashPassword(password)
 
-	var newUserId int
-	err = db.QueryRow(
-		"INSERT INTO users(email, password, name, created) "+
-			"VALUES($1, $2, $3, CURRENT_TIMESTAMP) "+
-			"RETURNING users.id",
-		email,
-		hashedPassword,
-		name,
-	).Scan(&newUserId)
-	if err != nil {
+	newUser := models.User{
+		Email:    email,
+		Password: hashedPassword,
+		Name:     name,
+	}
+	createUserResult := db.Create(&newUser)
+	if createUserResult.Error != nil {
 		utils.AbortErrServer(c)
 		return
 	}
 
 	newUserJson := gin.H{
-		"id":      newUserId,
-		"email":   email,
-		"name:":   name,
+		"id":    newUser.ID,
+		"email": newUser.Email,
+		"name:": newUser.Name,
 	}
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"user": newUserJson}))
 }
