@@ -160,7 +160,7 @@ func PostConversations(c *gin.Context) {
 		c.AbortWithError(http.StatusUnprocessableEntity,
 			utils.AppError{"Recipient user does not exist", 5, nil})
 		return
-	} else if readOtherUserResult != nil {
+	} else if readOtherUserResult.Error != nil {
 		utils.AbortErrServer(c)
 		return
 	}
