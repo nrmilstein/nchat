@@ -40,7 +40,7 @@ func GetConversations(c *gin.Context) {
 		conversationsJson = append(conversationsJson, gin.H{
 			"id":      conversation.ID,
 			"created": conversation.CreatedAt,
-			"otherUser": gin.H{
+			"conversationPartner": gin.H{
 				"id":    conversationPartner.ID,
 				"email": conversationPartner.Email,
 				"name":  conversationPartner.Name,
