@@ -24,6 +24,9 @@ type User struct {
 }
 
 func GetUserFromKey(key string) (*User, error) {
+	if key == "" {
+		return nil, ErrUserNotFound
+	}
 	db := db.GetDb()
 	var session Session
 	readSession := db.Joins("User").Take(&session, &Session{Key: key}) // TODO: exclude password
