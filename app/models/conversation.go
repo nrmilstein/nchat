@@ -38,7 +38,7 @@ func CreateConversation(
 
 	var myConversations []Conversation
 	var otherUsers []User
-	err := db.Model(&user).Association("Conversations").Find(&myConversations)
+	err := db.Model(user).Association("Conversations").Find(&myConversations)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, http.StatusInternalServerError, utils.ErrInternalServer
 	}
