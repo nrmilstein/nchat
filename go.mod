@@ -10,4 +10,5 @@ require (
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gorm.io/driver/postgres v1.0.2
 	gorm.io/gorm v1.20.2
+	nhooyr.io/websocket v1.8.6
 )

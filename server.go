@@ -50,6 +50,8 @@ func main() {
 	router.Use(middlewares.ErrorHandler())
 	//router.Static("/static", "static")
 
+	hub := controllers.NewHub()
+
 	api := router.Group("/api/v1")
 	{
 		api.POST("/users", controllers.PostUsers)
@@ -59,6 +61,7 @@ func main() {
 		api.GET("/conversations/:id", controllers.GetConversation)
 		api.POST("/conversations", controllers.PostConversations)
 		api.POST("/conversations/:id", controllers.PostConversation)
+		api.GET("/chat", hub.GetChat)
 	}
 
 	router.NoRoute(controllers.NoRoute)
