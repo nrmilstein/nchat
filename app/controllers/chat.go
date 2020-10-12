@@ -71,7 +71,7 @@ func (hub *Hub) GetChat(c *gin.Context) {
 	hub.addClient(clt)
 	defer hub.removeClient(clt)
 
-	err = clt.relayMessages(connection, request.Context())
+	err = clt.serveChatMessages(connection, request.Context())
 
 	log.Println(err)
 	connection.Close(websocket.StatusNormalClosure, "")
@@ -114,7 +114,7 @@ func (hub *Hub) removeClient(clt *client) {
 	log.Println(hub.clients)
 }
 
-func (hub *Hub) sendMessage(msg *wSMessage) {
+func (hub *Hub) relayMessage(msg *wSMessage) {
 	if msg.ReceiverId == msg.SenderId {
 		return
 	}
@@ -137,7 +137,7 @@ type client struct {
 	msgsToClient chan *wSMessageToClient
 }
 
-func (clt *client) relayMessages(connection *websocket.Conn, ctx context.Context) error {
+func (clt *client) serveChatMessages(connection *websocket.Conn, ctx context.Context) error {
 	// ctx, cancel := context.WithCancel(ctx)
 
 	msgsFromClient := make(chan *wSMessageFromClient)
@@ -157,7 +157,7 @@ func (clt *client) relayMessages(connection *websocket.Conn, ctx context.Context
 	for {
 		select {
 		case msgFromClient := <-msgsFromClient:
-			go clt.hub.sendMessage(&wSMessage{
+			go clt.hub.relayMessage(&wSMessage{
 				SenderId:   clt.userId,
 				ReceiverId: msgFromClient.ReceiverId,
 				Body:       msgFromClient.Body,
