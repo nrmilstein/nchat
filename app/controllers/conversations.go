@@ -113,16 +113,11 @@ func GetConversation(c *gin.Context) {
 }
 
 func PostConversations(c *gin.Context) {
-	db := db.GetDb()
-
 	user, err := models.GetUserFromRequest(c)
 	if err != nil {
 		utils.AbortErrForbidden(c)
 		return
 	}
-
-	otherUser := new(models.User)
-	newMessage := new(models.Message)
 
 	var params struct {
 		Email   string `json:"email" binding:"required"`
@@ -146,60 +141,11 @@ func PostConversations(c *gin.Context) {
 		return
 	}
 
-	otherUser.Email, newMessage.Body = strings.ToLower(params.Email), params.Message
+	recipientEmail, newMessageBody := strings.ToLower(params.Email), params.Message
 
-	if otherUser.Email == user.Email {
-		c.AbortWithError(http.StatusConflict,
-			utils.AppError{"Cannot create conversation with self.", 1, nil})
-		return
-	}
-
-	readOtherUserResult := db.Take(&otherUser, &models.User{Email: otherUser.Email})
-
-	if errors.Is(readOtherUserResult.Error, gorm.ErrRecordNotFound) {
-		c.AbortWithError(http.StatusUnprocessableEntity,
-			utils.AppError{"Recipient user does not exist", 5, nil})
-		return
-	} else if readOtherUserResult.Error != nil {
-		utils.AbortErrServer(c)
-		return
-	}
-
-	var myConversations []models.Conversation
-	var otherUsers []models.User
-	err = db.Model(&user).Association("Conversations").Find(&myConversations)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		utils.AbortErrServer(c)
-		return
-	}
-
-	err = db.Model(&myConversations).
-		Where(&models.User{ID: otherUser.ID}).Association("Users").Find(&otherUsers)
-	if len(otherUsers) > 0 {
-		c.AbortWithError(http.StatusConflict,
-			utils.AppError{"Conversation already exists.", 6, nil})
-		return
-	}
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		utils.AbortErrServer(c)
-		return
-	}
-
-	newMessage.UserID = user.ID
-	newConversation := models.Conversation{
-		Messages: []models.Message{
-			*newMessage,
-		},
-		Users: []models.User{
-			*user,
-			*otherUser,
-		},
-	}
-	createConversationResult := db.Create(&newConversation)
-	if createConversationResult.Error != nil {
-		utils.AbortErrServer(c)
-		return
-	}
+	newConversation, statusCode, err := models.CreateConversation(user, recipientEmail, newMessageBody)
+	newMessage := newConversation.Messages[0]
+	recipientUser := newConversation.Users[1]
 
 	conversationJson := gin.H{
 		"id":      newConversation.ID,
@@ -213,10 +159,15 @@ func PostConversations(c *gin.Context) {
 			},
 		},
 		"conversationPartner": gin.H{
-			"id":    otherUser.ID,
-			"email": otherUser.Email,
-			"name":  otherUser.Name,
+			"id":    recipientUser.ID,
+			"email": recipientUser.Email,
+			"name":  recipientUser.Name,
 		},
+	}
+
+	if err != nil {
+		c.AbortWithError(statusCode, err)
+		return
 	}
 
 	c.JSON(http.StatusCreated,
@@ -224,8 +175,6 @@ func PostConversations(c *gin.Context) {
 }
 
 func PostConversation(c *gin.Context) {
-	db := db.GetDb()
-
 	user, err := models.GetUserFromRequest(c)
 	if err != nil {
 		utils.AbortErrForbidden(c)
@@ -259,23 +208,10 @@ func PostConversation(c *gin.Context) {
 		return
 	}
 
-	var conversations []models.Conversation
-	db.Model(&user).Association("Conversations").
-		Find(&conversations, models.Conversation{ID: conversationIdParam})
+	newMessage, statusCode, err := models.CreateMessage(user, conversationIdParam, params.Message)
 
-	if len(conversations) == 0 {
-		c.AbortWithError(http.StatusNotFound, utils.AppError{"Conversation does not exist.", 1, nil})
-		return
-	}
-
-	newMessage := models.Message{
-		UserID:         user.ID,
-		ConversationID: conversationIdParam,
-		Body:           params.Message,
-	}
-	createMessageResult := db.Create(&newMessage)
-	if createMessageResult.Error != nil {
-		utils.AbortErrServer(c)
+	if err != nil {
+		c.AbortWithError(statusCode, err)
 		return
 	}
 
