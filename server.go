@@ -7,6 +7,7 @@ import (
 	_ "github.com/heroku/x/hmetrics/onload"
 
 	"github.com/nrmilstein/nchat/app/controllers"
+	"github.com/nrmilstein/nchat/app/controllers/chatServer"
 	"github.com/nrmilstein/nchat/app/middlewares"
 	"github.com/nrmilstein/nchat/app/models"
 	"github.com/nrmilstein/nchat/db"
@@ -50,7 +51,7 @@ func main() {
 	router.Use(middlewares.ErrorHandler())
 	//router.Static("/static", "static")
 
-	hub := controllers.NewHub()
+	hub := chatServer.NewHub()
 
 	api := router.Group("/api/v1")
 	{

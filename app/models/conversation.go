@@ -17,6 +17,28 @@ type Conversation struct {
 	CreatedAt time.Time `gorm:"not null"`
 }
 
+var ErrConversationPartnerNotFound = errors.New(
+	"User not part of conversation or conversation not found.")
+
+var ErrGorm = errors.New("Gorm error")
+
+func GetConversationPartner(user *User, conversationId int) (*User, error) {
+	db := db.GetDb()
+
+	var conversation Conversation
+	response := db.Preload("Users", "ID <> ?", user.ID).
+		Take(&conversation, Conversation{ID: conversationId})
+
+	if response.Error != nil {
+		return nil, ErrGorm
+	}
+
+	if len(conversation.Users) != 1 {
+		return nil, ErrConversationPartnerNotFound
+	}
+	return &conversation.Users[0], nil
+}
+
 func CreateConversation(
 	user *User,
 	recipientEmail string,
