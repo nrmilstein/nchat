@@ -1,5 +1,6 @@
 module github.com/nrmilstein/nchat
 
+// +heroku goVersion go1.15
 go 1.14
 
 require (
