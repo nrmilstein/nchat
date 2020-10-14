@@ -46,7 +46,9 @@ func (clt *client) serveChatMessages(connection *websocket.Conn, ctx context.Con
 		select {
 		case msgRequest := <-msgRequests:
 			msgSent := clt.hub.relayMessage(clt.user, msgRequest)
-			wsjson.Write(ctx, connection, msgSent) // TODO: implement proper ACKs
+			if msgSent != nil {
+				wsjson.Write(ctx, connection, msgSent) // TODO: implement proper ACKs
+			}
 		case msgResponse := <-clt.send:
 			wsjson.Write(ctx, connection, msgResponse)
 		case err := <-errs:

@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nrmilstein/nchat/app/models"
+	"github.com/nrmilstein/nchat/db"
 	"github.com/nrmilstein/nchat/utils"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
@@ -18,8 +19,8 @@ type wSAuthMessage struct {
 }
 
 type wsMsgRequest struct {
-	ConversationId int    `json:"conversationId"`
-	Body           string `json:"body"`
+	Email string `json:"email"`
+	Body  string `json:"body"`
 }
 
 type wsMsgResponse struct {
@@ -86,17 +87,18 @@ func readAuthMessage(connection *websocket.Conn, ctx context.Context) (string, e
 }
 
 func (hub *Hub) relayMessage(sender *models.User, msgRequest *wsMsgRequest) *wsMsgResponse {
-	newMessage, _, err := models.CreateMessage(sender, msgRequest.ConversationId, msgRequest.Body)
-	if err != nil {
+	db := db.GetDb()
+
+	var recipient models.User
+	result := db.Take(&recipient, &models.User{Email: msgRequest.Email})
+	if result.Error != nil {
 		return nil
 	}
 
-	conversationPartner, err := models.GetConversationPartner(sender, msgRequest.ConversationId)
+	newMessage, err := models.CreateMessage(sender, &recipient, msgRequest.Body)
 	if err != nil {
 		return nil
 	}
-
-	conversationPartnerId := conversationPartner.ID
 
 	msgResponse := &wsMsgResponse{
 		Id:             newMessage.ID,
@@ -109,7 +111,7 @@ func (hub *Hub) relayMessage(sender *models.User, msgRequest *wsMsgRequest) *wsM
 	hub.clientsMutex.RLock()
 	defer hub.clientsMutex.RUnlock()
 
-	hub.clients[conversationPartnerId].broadcastMessage(msgResponse)
+	hub.clients[recipient.ID].broadcastMessage(msgResponse)
 	return msgResponse
 }
 

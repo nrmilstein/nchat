@@ -60,8 +60,6 @@ func main() {
 		api.GET("/authenticate", controllers.GetAuthenticate)
 		api.GET("/conversations", controllers.GetConversations)
 		api.GET("/conversations/:id", controllers.GetConversation)
-		api.POST("/conversations", controllers.PostConversations)
-		api.POST("/conversations/:id", controllers.PostConversation)
 		api.GET("/chat", hub.GetChat)
 	}
 
