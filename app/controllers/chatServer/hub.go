@@ -54,7 +54,7 @@ func (hub *Hub) GetChat(c *gin.Context) {
 		utils.AbortErrServer(c)
 		return
 	}
-	defer connection.Close(websocket.StatusInternalError, "The sky is falling.")
+	defer connection.Close(websocket.StatusInternalError, "Internal server error.")
 
 	authKey, err := readAuthMessage(connection, request.Context())
 	if err != nil {
