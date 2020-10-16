@@ -41,12 +41,19 @@ func PostUsers(c *gin.Context) {
 
 	email, password, name := strings.ToLower(params.Email), params.Password, params.Name
 
+	if strings.TrimSpace(email) == "" ||
+		strings.TrimSpace(password) == "" ||
+		strings.TrimSpace(name) == "" {
+		c.AbortWithError(http.StatusBadRequest, utils.AppError{"Fields cannot be empty.", 5, nil})
+		return
+	}
+
 	var user models.User
 	readUserResult := db.Take(&user, &models.User{Email: email})
 	if readUserResult.Error != gorm.ErrRecordNotFound {
 		if readUserResult.Error == nil {
 			c.AbortWithError(http.StatusConflict,
-				utils.AppError{"Email already registered.", 4, nil})
+				utils.AppError{"Email already registered.", 6, nil})
 			return
 		} else {
 			utils.AbortErrServer(c)
