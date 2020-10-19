@@ -11,14 +11,14 @@ import (
 type client struct {
 	hub  *Hub
 	user *models.User
-	send chan *wsMsgResponse
+	send chan *wsMsgNotification
 }
 
 func newClient(hub *Hub, user *models.User) *client {
 	return &client{
 		hub:  hub,
 		user: user,
-		send: make(chan *wsMsgResponse),
+		send: make(chan *wsMsgNotification),
 	}
 }
 
@@ -69,7 +69,7 @@ func (cltGroup clientGroup) removeClient(clt *client) {
 	delete(cltGroup, clt)
 }
 
-func (cltGroup clientGroup) broadcastMessage(msg *wsMsgResponse) {
+func (cltGroup clientGroup) broadcastMessage(msg *wsMsgNotification) {
 	for clt := range cltGroup {
 		clt.send <- msg
 	}

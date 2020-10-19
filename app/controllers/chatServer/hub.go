@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"sync"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nrmilstein/nchat/app/models"
@@ -13,23 +12,6 @@ import (
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 )
-
-type wSAuthMessage struct {
-	AuthKey string `json:"authKey"`
-}
-
-type wsMsgRequest struct {
-	Email string `json:"email"`
-	Body  string `json:"body"`
-}
-
-type wsMsgResponse struct {
-	Id             int       `json:"id"`
-	ConversationId int       `json:"conversationId"`
-	SenderId       int       `json:"senderId"`
-	Body           string    `json:"body"`
-	Created        time.Time `json:"sent"`
-}
 
 type Hub struct {
 	clientsMutex sync.RWMutex
@@ -56,12 +38,7 @@ func (hub *Hub) GetChat(c *gin.Context) {
 	}
 	defer connection.Close(websocket.StatusInternalError, "Internal server error.")
 
-	authKey, err := readAuthMessage(connection, request.Context())
-	if err != nil {
-		connection.Close(4003, "Authorization failed.")
-		return
-	}
-	user, err := models.GetUserFromKey(authKey)
+	user, err := handleAuthMessage(connection, request.Context())
 	if err != nil {
 		connection.Close(4003, "Authorization failed.")
 		return
@@ -77,41 +54,76 @@ func (hub *Hub) GetChat(c *gin.Context) {
 	connection.Close(websocket.StatusNormalClosure, "")
 }
 
-func readAuthMessage(connection *websocket.Conn, ctx context.Context) (string, error) {
-	var authMessage wSAuthMessage
-	err := wsjson.Read(ctx, connection, &authMessage)
+func handleAuthMessage(connection *websocket.Conn, ctx context.Context) (*models.User, error) {
+	var authRequest wsAuthRequest
+	err := wsjson.Read(ctx, connection, &authRequest)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return authMessage.AuthKey, err
+
+	authKey := authRequest.Data.AuthKey
+	user, err := models.GetUserFromKey(authKey)
+	if err != nil {
+		return nil, err
+	}
+
+	authResponse := wsAuthSuccessResponse{
+		Id:     authRequest.Id,
+		Type:   "response",
+		Status: "success",
+	}
+
+	wsjson.Write(ctx, connection, authResponse)
+	return user, nil
 }
 
-func (hub *Hub) relayMessage(sender *models.User, msgRequest *wsMsgRequest) *wsMsgResponse {
+func (hub *Hub) relayMessage(sender *models.User, msgRequest *wsMsgRequest) *wsMsgSuccessResponse {
 	db := db.GetDb()
 
 	var recipient models.User
-	result := db.Take(&recipient, &models.User{Email: msgRequest.Email})
+	result := db.Take(&recipient, &models.User{Email: msgRequest.Data.Email})
 	if result.Error != nil {
 		return nil
 	}
 
-	newMessage, err := models.CreateMessage(sender, &recipient, msgRequest.Body)
+	newMessage, err := models.CreateMessage(sender, &recipient, msgRequest.Data.Body)
 	if err != nil {
 		return nil
 	}
 
-	msgResponse := &wsMsgResponse{
-		Id:             newMessage.ID,
-		ConversationId: newMessage.ConversationID,
-		SenderId:       newMessage.UserID,
-		Body:           newMessage.Body,
-		Created:        newMessage.CreatedAt,
+	msgNotificaiton := &wsMsgNotification{
+		Type:   "notification",
+		Method: "newMessage",
+		Data: wsMsgNotificationData{
+			Message: wsMsgNotificationMessage{
+				Id:             newMessage.ID,
+				ConversationId: newMessage.ConversationID,
+				SenderId:       newMessage.UserID,
+				Body:           newMessage.Body,
+				Created:        newMessage.CreatedAt,
+			},
+		},
 	}
 
 	hub.clientsMutex.RLock()
 	defer hub.clientsMutex.RUnlock()
 
-	hub.clients[recipient.ID].broadcastMessage(msgResponse)
+	hub.clients[recipient.ID].broadcastMessage(msgNotificaiton)
+
+	msgResponse := &wsMsgSuccessResponse{
+		Id:     msgRequest.Id,
+		Type:   "response",
+		Status: "success",
+		Data: wsMsgSuccessResponseData{
+			Message: wsMsgSuccessResponseMessage{
+				Id:             newMessage.ID,
+				ConversationId: newMessage.ConversationID,
+				SenderId:       newMessage.UserID,
+				Body:           newMessage.Body,
+				Created:        newMessage.CreatedAt,
+			},
+		},
+	}
 	return msgResponse
 }
 
