@@ -9,15 +9,8 @@ type wsMsgNotification struct {
 }
 
 type wsMsgNotificationData struct {
-	Message wsMsgNotificationMessage `json:"message"`
-}
-
-type wsMsgNotificationMessage struct {
-	Id             int       `json:"id"`
-	ConversationId int       `json:"conversationId"`
-	SenderId       int       `json:"senderId"`
-	Body           string    `json:"body"`
-	Created        time.Time `json:"sent"`
+	Message      wsMsgMessage      `json:"message"`
+	Conversation wsMsgConversation `json:"conversation"`
 }
 
 type wsMsgRequest struct {
@@ -40,13 +33,25 @@ type wsMsgSuccessResponse struct {
 }
 
 type wsMsgSuccessResponseData struct {
-	Message wsMsgSuccessResponseMessage `json:"message"`
+	Message      wsMsgMessage      `json:"message"`
+	Conversation wsMsgConversation `json:"conversation"`
 }
-
-type wsMsgSuccessResponseMessage struct {
+type wsMsgMessage struct {
 	Id             int       `json:"id"`
 	ConversationId int       `json:"conversationId"`
 	SenderId       int       `json:"senderId"`
 	Body           string    `json:"body"`
-	Created        time.Time `json:"sent"`
+	CreatedAt      time.Time `json:"sent"`
+}
+
+type wsMsgConversation struct {
+	Id                  int                      `json:"id"`
+	CreatedAt           time.Time                `json:"created"`
+	ConversationPartner wsMsgConversationPartner `json:"conversationPartner"`
+}
+
+type wsMsgConversationPartner struct {
+	Id    int    `json:"id"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
 }

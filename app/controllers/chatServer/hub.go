@@ -86,7 +86,7 @@ func (hub *Hub) relayMessage(sender *models.User, msgRequest *wsMsgRequest) *wsM
 		return nil
 	}
 
-	newMessage, err := models.CreateMessage(sender, &recipient, msgRequest.Data.Body)
+	newMessage, conversation, err := models.CreateMessage(sender, &recipient, msgRequest.Data.Body)
 	if err != nil {
 		return nil
 	}
@@ -95,12 +95,21 @@ func (hub *Hub) relayMessage(sender *models.User, msgRequest *wsMsgRequest) *wsM
 		Type:   "notification",
 		Method: "newMessage",
 		Data: wsMsgNotificationData{
-			Message: wsMsgNotificationMessage{
+			Message: wsMsgMessage{
 				Id:             newMessage.ID,
 				ConversationId: newMessage.ConversationID,
 				SenderId:       newMessage.UserID,
 				Body:           newMessage.Body,
-				Created:        newMessage.CreatedAt,
+				CreatedAt:      newMessage.CreatedAt,
+			},
+			Conversation: wsMsgConversation{
+				Id:        conversation.ID,
+				CreatedAt: conversation.CreatedAt,
+				ConversationPartner: wsMsgConversationPartner{
+					Id:    sender.ID,
+					Email: sender.Email,
+					Name:  sender.Name,
+				},
 			},
 		},
 	}
@@ -115,12 +124,21 @@ func (hub *Hub) relayMessage(sender *models.User, msgRequest *wsMsgRequest) *wsM
 		Type:   "response",
 		Status: "success",
 		Data: wsMsgSuccessResponseData{
-			Message: wsMsgSuccessResponseMessage{
+			Message: wsMsgMessage{
 				Id:             newMessage.ID,
 				ConversationId: newMessage.ConversationID,
 				SenderId:       newMessage.UserID,
 				Body:           newMessage.Body,
-				Created:        newMessage.CreatedAt,
+				CreatedAt:      newMessage.CreatedAt,
+			},
+			Conversation: wsMsgConversation{
+				Id:        conversation.ID,
+				CreatedAt: conversation.CreatedAt,
+				ConversationPartner: wsMsgConversationPartner{
+					Id:    recipient.ID,
+					Email: recipient.Email,
+					Name:  recipient.Name,
+				},
 			},
 		},
 	}

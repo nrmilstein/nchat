@@ -38,12 +38,12 @@ func newGormError(e error) GormError {
 	}
 }
 
-func CreateMessage(sender *User, recipient *User, body string) (*Message, error) {
+func CreateMessage(sender *User, recipient *User, body string) (*Message, *Conversation, error) {
 	db := db.GetDb()
 
 	conversation, err := GetConversation(sender, recipient)
 	if !errors.Is(err, ErrConversationNotFound) && err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	newMessage := Message{
@@ -63,15 +63,16 @@ func CreateMessage(sender *User, recipient *User, body string) (*Message, error)
 		}
 		result := db.Create(&newConversation)
 		if result.Error != nil {
-			return nil, newGormError(result.Error)
+			return nil, nil, newGormError(result.Error)
 		}
+		conversation = newConversation
 	} else {
 		err := db.Model(&conversation).Association("Messages").Append(&newMessage)
 		if err != nil {
-			return nil, newGormError(err)
+			return nil, nil, newGormError(err)
 		}
 	}
-	return &newMessage, nil
+	return &newMessage, conversation, nil
 }
 
 func GetConversation(sender *User, recipient *User) (*Conversation, error) {
