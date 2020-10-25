@@ -66,7 +66,9 @@ func GetConversation(c *gin.Context) {
 	var conversations []models.Conversation
 	err = db.Model(&user).
 		Preload("Users", "ID <> ?", user.ID).
-		Preload("Messages").
+		Preload("Messages", func(db *gorm.DB) *gorm.DB {
+			return db.Order("messages.created_at ASC")
+		}).
 		Association("Conversations").Find(&conversations, models.Conversation{ID: conversationIdParam})
 
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
