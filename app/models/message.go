@@ -46,7 +46,7 @@ func CreateMessage(sender *User, recipient *User, body string) (*Message, *Conve
 		return nil, nil, err
 	}
 
-	newMessage := Message{
+	newMessage := &Message{
 		UserID: sender.ID,
 		Body:   body,
 	}
@@ -58,7 +58,7 @@ func CreateMessage(sender *User, recipient *User, body string) (*Message, *Conve
 				*recipient,
 			},
 			Messages: []Message{
-				newMessage,
+				*newMessage,
 			},
 		}
 		result := db.Create(&newConversation)
@@ -66,13 +66,14 @@ func CreateMessage(sender *User, recipient *User, body string) (*Message, *Conve
 			return nil, nil, newGormError(result.Error)
 		}
 		conversation = newConversation
+		newMessage = &newConversation.Messages[0]
 	} else {
 		err := db.Model(&conversation).Association("Messages").Append(&newMessage)
 		if err != nil {
 			return nil, nil, newGormError(err)
 		}
 	}
-	return &newMessage, conversation, nil
+	return newMessage, conversation, nil
 }
 
 func GetConversation(sender *User, recipient *User) (*Conversation, error) {
