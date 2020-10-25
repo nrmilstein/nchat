@@ -69,14 +69,14 @@ func GetConversation(c *gin.Context) {
 		Preload("Messages").
 		Association("Conversations").Find(&conversations, models.Conversation{ID: conversationIdParam})
 
-	if len(conversations) == 0 {
-		c.AbortWithError(http.StatusNotFound,
-			utils.AppError{"Conversation not found.", 1, nil})
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		utils.AbortErrServer(c)
 		return
 	}
 
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		utils.AbortErrServer(c)
+	if len(conversations) == 0 {
+		c.AbortWithError(http.StatusNotFound,
+			utils.AppError{"Conversation not found.", 1, nil})
 		return
 	}
 
