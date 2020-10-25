@@ -56,6 +56,7 @@ func main() {
 	api := router.Group("/api/v1")
 	{
 		api.POST("/users", controllers.PostUsers)
+		api.GET("/users/:email", controllers.GetUser)
 		api.POST("/authenticate", controllers.PostAuthenticate)
 		api.GET("/authenticate", controllers.GetAuthenticate)
 		api.GET("/conversations", controllers.GetConversations)

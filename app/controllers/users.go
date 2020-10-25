@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -12,6 +13,42 @@ import (
 	"github.com/nrmilstein/nchat/utils"
 	"gorm.io/gorm"
 )
+
+func GetUser(c *gin.Context) {
+	errUserNotFound := utils.AppError{"User not found.", 1, nil}
+	db := db.GetDb()
+
+	_, err := models.GetUserFromRequest(c)
+	if err != nil {
+		utils.AbortErrForbidden(c)
+		return
+	}
+
+	emailParam := strings.ToLower(c.Param("email"))
+
+	if strings.TrimSpace(emailParam) == "" {
+		c.AbortWithError(http.StatusNotFound, errUserNotFound)
+		return
+	}
+
+	var user models.User
+	response := db.Take(&user, models.User{Email: emailParam})
+	if errors.Is(response.Error, gorm.ErrRecordNotFound) {
+		c.AbortWithError(http.StatusNotFound, errUserNotFound)
+		return
+	} else if response.Error != nil {
+		utils.AbortErrServer(c)
+		return
+	}
+
+	userJson := gin.H{
+		"id":    user.ID,
+		"email": user.Email,
+		"name":  user.Name,
+	}
+
+	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{"user": userJson}))
+}
 
 func PostUsers(c *gin.Context) {
 	db := db.GetDb()
