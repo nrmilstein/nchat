@@ -64,7 +64,7 @@ func main() {
 		api.GET("/chat", hub.GetChat)
 	}
 
-	router.Use(static.Serve("/", static.LocalFile("./nchat-web/build", true)))
+	router.Use(static.Serve("/", static.LocalFile("./nchat-web", true)))
 
 	router.NoRoute(controllers.NoRoute)
 
