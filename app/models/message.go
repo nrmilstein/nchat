@@ -61,14 +61,16 @@ func CreateMessage(sender *User, recipient *User, body string) (*Message, *Conve
 				*newMessage,
 			},
 		}
-		result := db.Create(&newConversation)
+
+		result := db.Create(newConversation)
 		if result.Error != nil {
 			return nil, nil, newGormError(result.Error)
 		}
+
 		conversation = newConversation
 		newMessage = &newConversation.Messages[0]
 	} else {
-		err := db.Model(&conversation).Association("Messages").Append(&newMessage)
+		err := db.Model(conversation).Association("Messages").Append(newMessage)
 		if err != nil {
 			return nil, nil, newGormError(err)
 		}
