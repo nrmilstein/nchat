@@ -81,7 +81,7 @@ func (hub *Hub) relayMessage(sender *models.User, msgRequest *wsMsgRequest) *wsM
 	db := db.GetDb()
 
 	var recipient models.User
-	result := db.Take(&recipient, &models.User{Email: msgRequest.Data.Email})
+	result := db.Take(&recipient, &models.User{Username: msgRequest.Data.Username})
 	if result.Error != nil {
 		return nil
 	}
@@ -106,9 +106,9 @@ func (hub *Hub) relayMessage(sender *models.User, msgRequest *wsMsgRequest) *wsM
 				Id:        conversation.ID,
 				CreatedAt: conversation.CreatedAt,
 				ConversationPartner: wsMsgConversationPartner{
-					Id:    sender.ID,
-					Email: sender.Email,
-					Name:  sender.Name,
+					Id:       sender.ID,
+					Username: sender.Username,
+					Name:     sender.Name,
 				},
 			},
 		},
@@ -135,9 +135,9 @@ func (hub *Hub) relayMessage(sender *models.User, msgRequest *wsMsgRequest) *wsM
 				Id:        conversation.ID,
 				CreatedAt: conversation.CreatedAt,
 				ConversationPartner: wsMsgConversationPartner{
-					Id:    recipient.ID,
-					Email: recipient.Email,
-					Name:  recipient.Name,
+					Id:       recipient.ID,
+					Username: recipient.Username,
+					Name:     recipient.Name,
 				},
 			},
 		},

@@ -14,7 +14,7 @@ Parameters:
 
 | Name     | Type   | In   | Description                                           |
 | -------- | ------ | ---- | ----------------------------------------------------- |
-| email    | string | body | The email of the user you would like to register.     |
+| username    | string | body | The username of the user you would like to register.     |
 | password | string | body | The password of the user you would like to register.  |
 | name     | string | body | The name of the user you would like to sign register. |
 
@@ -26,7 +26,7 @@ Sample response:
 {
     "success": "user added",
     "user": {
-        "email": "user@example.com",
+        "username": "user@example.com",
         "id": 14,
         "name:": "User McUserface"
     }
@@ -43,7 +43,7 @@ Parameters:
 
 | Name     | Type   | In   | Description                                              |
 | -------- | ------ | ---- | -------------------------------------------------------- |
-| email    | string | body | The email of the user you would like to authenticate.    |
+| username    | string | body | The username of the user you would like to authenticate.    |
 | password | string | body | The password of the user you would like to authenticate. |
 
 Sample response:
@@ -55,7 +55,7 @@ Sample response:
     "data": {
         "authKey": "Ozo1SNVJ7vxh0jkGIVfoN0dT",
         "user": {
-            "email": "user@example.com",
+            "username": "user@example.com",
             "id": 14,
             "name": "User McUserface"
         }
@@ -84,7 +84,7 @@ Sample response:
 {
     "data": {
         "user": {
-            "email": "user@example.com",
+            "username": "user@example.com",
             "id": 14,
             "name": "User McUserface"
         }
@@ -115,12 +115,12 @@ Sample response:
                 "id": 26,
                 "users": [
                     {
-                        "email": "user@example.com",
+                        "username": "user@example.com",
                         "id": 14,
                         "name": "User McUserface"
                     },
                     {
-                        "email": "user2@example.com",
+                        "username": "user2@example.com",
                         "id": 12,
                         "name": "User McDeeds"
                     }
@@ -171,12 +171,12 @@ Sample response:
             ],
             "users": [
                 {
-                    "email": "user@example.com",
+                    "username": "user@example.com",
                     "id": 14,
                     "name": "User McUserface"
                 },
                 {
-                    "email": "user2@example.com",
+                    "username": "user2@example.com",
                     "id": 12,
                     "name": "User McDeeds"
                 }

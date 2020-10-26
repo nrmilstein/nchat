@@ -38,9 +38,9 @@ func GetConversations(c *gin.Context) {
 			"id":      conversation.ID,
 			"created": conversation.CreatedAt,
 			"conversationPartner": gin.H{
-				"id":    conversationPartner.ID,
-				"email": conversationPartner.Email,
-				"name":  conversationPartner.Name,
+				"id":       conversationPartner.ID,
+				"username": conversationPartner.Username,
+				"name":     conversationPartner.Name,
 			},
 		})
 	}
@@ -100,9 +100,9 @@ func GetConversation(c *gin.Context) {
 		"id":      conversation.ID,
 		"created": conversation.CreatedAt,
 		"conversationPartner": gin.H{
-			"id":    conversationPartner.ID,
-			"email": conversationPartner.Email,
-			"name":  conversationPartner.Name,
+			"id":       conversationPartner.ID,
+			"username": conversationPartner.Username,
+			"name":     conversationPartner.Name,
 		},
 		"messages": messagesJson,
 	}

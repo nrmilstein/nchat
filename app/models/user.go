@@ -15,7 +15,7 @@ var ErrUserNotFound = errors.New("No user found.")
 
 type User struct {
 	ID            int            `gorm:"primaryKey,not null"`
-	Email         string         `gorm:"not null"`
+	Username      string         `gorm:"not null"`
 	Password      string         `gorm:"not null"`
 	Name          string         `gorm:"not null"`
 	Conversations []Conversation `gorm:"many2many:conversation_users;"`

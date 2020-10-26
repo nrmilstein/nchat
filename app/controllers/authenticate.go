@@ -19,10 +19,10 @@ import (
 
 func PostAuthenticate(c *gin.Context) {
 	db := db.GetDb()
-	invalidCredError := utils.AppError{"Invalid email/password.", 1, nil}
+	invalidCredError := utils.AppError{"Invalid username/password.", 1, nil}
 
 	var params struct {
-		Email    string `json:"email" binding:"required"`
+		Username string `json:"username" binding:"required"`
 		Password string `json:"password" binding:"required"`
 	}
 
@@ -41,11 +41,11 @@ func PostAuthenticate(c *gin.Context) {
 		return
 	}
 
-	email, password := strings.ToLower(params.Email), params.Password
+	username, password := strings.ToLower(params.Username), params.Password
 	hashedPassword := models.HashPassword(password)
 
 	var user models.User
-	readUserResult := db.Take(&user, &models.User{Email: email, Password: hashedPassword})
+	readUserResult := db.Take(&user, &models.User{Username: username, Password: hashedPassword})
 
 	if errors.Is(readUserResult.Error, gorm.ErrRecordNotFound) {
 		c.AbortWithError(http.StatusUnauthorized, invalidCredError)
@@ -81,9 +81,9 @@ func PostAuthenticate(c *gin.Context) {
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{
 		"authKey": authKey,
 		"user": gin.H{
-			"id":    user.ID,
-			"email": user.Email,
-			"name":  user.Name,
+			"id":       user.ID,
+			"username": user.Username,
+			"name":     user.Name,
 		},
 	}))
 }
@@ -97,9 +97,9 @@ func GetAuthenticate(c *gin.Context) {
 
 	userJson := gin.H{
 		"user": gin.H{
-			"id":    user.ID,
-			"email": user.Email,
-			"name":  user.Name,
+			"id":       user.ID,
+			"username": user.Username,
+			"name":     user.Name,
 		},
 	}
 

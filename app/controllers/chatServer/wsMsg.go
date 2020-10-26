@@ -21,8 +21,8 @@ type wsMsgRequest struct {
 }
 
 type wsMsgRequestData struct {
-	Email string `json:"email"`
-	Body  string `json:"body"`
+	Username string `json:"username"`
+	Body     string `json:"body"`
 }
 
 type wsMsgSuccessResponse struct {
@@ -51,7 +51,7 @@ type wsMsgConversation struct {
 }
 
 type wsMsgConversationPartner struct {
-	Id    int    `json:"id"`
-	Email string `json:"email"`
-	Name  string `json:"name"`
+	Id       int    `json:"id"`
+	Username string `json:"username"`
+	Name     string `json:"name"`
 }

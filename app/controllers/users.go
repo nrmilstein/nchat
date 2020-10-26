@@ -24,15 +24,15 @@ func GetUser(c *gin.Context) {
 		return
 	}
 
-	emailParam := strings.ToLower(c.Param("email"))
+	usernameParam := strings.ToLower(c.Param("username"))
 
-	if strings.TrimSpace(emailParam) == "" {
+	if strings.TrimSpace(usernameParam) == "" {
 		c.AbortWithError(http.StatusNotFound, errUserNotFound)
 		return
 	}
 
 	var user models.User
-	response := db.Take(&user, models.User{Email: emailParam})
+	response := db.Take(&user, models.User{Username: usernameParam})
 	if errors.Is(response.Error, gorm.ErrRecordNotFound) {
 		c.AbortWithError(http.StatusNotFound, errUserNotFound)
 		return
@@ -42,9 +42,9 @@ func GetUser(c *gin.Context) {
 	}
 
 	userJson := gin.H{
-		"id":    user.ID,
-		"email": user.Email,
-		"name":  user.Name,
+		"id":       user.ID,
+		"username": user.Username,
+		"name":     user.Name,
 	}
 
 	c.JSON(http.StatusOK, utils.SuccessResponse(gin.H{"user": userJson}))
@@ -54,7 +54,7 @@ func PostUsers(c *gin.Context) {
 	db := db.GetDb()
 
 	var params struct {
-		Email    string `json:"email" binding:"required"`
+		Username string `json:"username" binding:"required"`
 		Password string `json:"password" binding:"required"`
 		Name     string `json:"name" binding:"required"`
 	}
@@ -76,9 +76,9 @@ func PostUsers(c *gin.Context) {
 		return
 	}
 
-	email, password, name := strings.ToLower(params.Email), params.Password, params.Name
+	username, password, name := strings.ToLower(params.Username), params.Password, params.Name
 
-	if strings.TrimSpace(email) == "" ||
+	if strings.TrimSpace(username) == "" ||
 		strings.TrimSpace(password) == "" ||
 		strings.TrimSpace(name) == "" {
 		c.AbortWithError(http.StatusBadRequest, utils.AppError{"Fields cannot be empty.", 5, nil})
@@ -86,11 +86,11 @@ func PostUsers(c *gin.Context) {
 	}
 
 	var user models.User
-	readUserResult := db.Take(&user, &models.User{Email: email})
+	readUserResult := db.Take(&user, &models.User{Username: username})
 	if readUserResult.Error != gorm.ErrRecordNotFound {
 		if readUserResult.Error == nil {
 			c.AbortWithError(http.StatusConflict,
-				utils.AppError{"Email already registered.", 6, nil})
+				utils.AppError{"Username already registered.", 6, nil})
 			return
 		} else {
 			utils.AbortErrServer(c)
@@ -101,7 +101,7 @@ func PostUsers(c *gin.Context) {
 	hashedPassword := models.HashPassword(password)
 
 	newUser := models.User{
-		Email:    email,
+		Username: username,
 		Password: hashedPassword,
 		Name:     name,
 	}
@@ -112,9 +112,9 @@ func PostUsers(c *gin.Context) {
 	}
 
 	newUserJson := gin.H{
-		"id":    newUser.ID,
-		"email": newUser.Email,
-		"name:": newUser.Name,
+		"id":       newUser.ID,
+		"username": newUser.Username,
+		"name:":    newUser.Name,
 	}
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{"user": newUserJson}))
 }
