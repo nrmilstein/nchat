@@ -32,6 +32,7 @@ func main() {
 		}
 		db.InitDbStruct(psqlInfo)
 	} else {
+		gin.SetMode(gin.ReleaseMode)
 		db.InitDb(databaseUrl)
 	}
 
