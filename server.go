@@ -66,6 +66,8 @@ func main() {
 	}
 
 	router.Use(static.Serve("/", static.LocalFile("./nchat-web", true)))
+	router.Use(static.Serve("/accounts/login", static.LocalFile("./nchat-web", true)))
+	router.Use(static.Serve("/accounts/signup", static.LocalFile("./nchat-web", true)))
 
 	router.NoRoute(controllers.NoRoute)
 
