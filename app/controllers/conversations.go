@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +24,11 @@ func GetConversations(c *gin.Context) {
 
 	var conversations []models.Conversation
 
-	readConversationsResult := db.Model(&user).Preload("Users", "ID <> ?", user.ID).
+	readConversationsResult := db.Model(&user).
+		Preload("Users", "ID <> ?", user.ID).
+		Preload("Messages", func(db *gorm.DB) *gorm.DB {
+			return db.Select("DISTINCT ON (conversation_id) *").Order("conversation_id, created_at DESC")
+		}).
 		Association("Conversations").Find(&conversations)
 
 	if readConversationsResult != nil {
@@ -31,9 +36,20 @@ func GetConversations(c *gin.Context) {
 		return
 	}
 
+	sort.Slice(conversations, func(i, j int) bool {
+		if len(conversations[i].Messages) == 0 {
+			return true
+		} else if len(conversations[j].Messages) == 0 {
+			return false
+		}
+		return conversations[i].Messages[0].CreatedAt.After(conversations[j].Messages[0].CreatedAt)
+	})
+
 	conversationsJson := []gin.H{}
 	for _, conversation := range conversations {
+		firstMessage := conversation.Messages[0]
 		conversationPartner := conversation.Users[0]
+
 		conversationsJson = append(conversationsJson, gin.H{
 			"id":      conversation.ID,
 			"created": conversation.CreatedAt,
@@ -41,6 +57,14 @@ func GetConversations(c *gin.Context) {
 				"id":       conversationPartner.ID,
 				"username": conversationPartner.Username,
 				"name":     conversationPartner.Name,
+			},
+			"messages": []gin.H{
+				{
+					"id":       firstMessage.ID,
+					"senderId": firstMessage.UserID,
+					"sent":     firstMessage.CreatedAt,
+					"body":     firstMessage.Body,
+				},
 			},
 		})
 	}
