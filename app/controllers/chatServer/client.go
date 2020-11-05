@@ -2,6 +2,7 @@ package chatServer
 
 import (
 	"context"
+	"time"
 
 	"github.com/nrmilstein/nchat/app/models"
 	"nhooyr.io/websocket"
@@ -23,8 +24,6 @@ func newClient(hub *Hub, user *models.User) *client {
 }
 
 func (clt *client) serveChatMessages(connection *websocket.Conn, ctx context.Context) error {
-	// ctx, cancel := context.WithCancel(ctx)
-
 	msgRequests := make(chan *wsMsgRequest)
 	errs := make(chan error)
 
@@ -43,11 +42,13 @@ func (clt *client) serveChatMessages(connection *websocket.Conn, ctx context.Con
 	}()
 
 	for {
+		heartbeatCtx, cancel := context.WithTimeout(ctx, time.Second*30)
+		defer cancel()
 		select {
 		case msgRequest := <-msgRequests:
 			msgSent := clt.hub.relayMessage(clt.user, msgRequest)
 			if msgSent != nil {
-				wsjson.Write(ctx, connection, msgSent) // TODO: implement proper ACKs
+				wsjson.Write(ctx, connection, msgSent)
 			}
 		case msgResponse := <-clt.send:
 			wsjson.Write(ctx, connection, msgResponse)
@@ -55,6 +56,15 @@ func (clt *client) serveChatMessages(connection *websocket.Conn, ctx context.Con
 			return err
 		case <-ctx.Done():
 			return ctx.Err()
+		case <-heartbeatCtx.Done():
+			pingTimeout, cancel := context.WithTimeout(ctx, time.Second*10)
+			defer cancel()
+
+			err := connection.Ping(pingTimeout)
+
+			if err != nil {
+				return err
+			}
 		}
 	}
 }
