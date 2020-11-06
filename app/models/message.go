@@ -17,6 +17,7 @@ type Message struct {
 
 var ErrConversationNotFound = errors.New("Conversation not found.")
 var ErrTooManyConversations = errors.New("Too many conversations found between given users.")
+var ErrSameUser = errors.New("Cannot send message to self.")
 
 type GormError struct {
 	err error
@@ -39,6 +40,10 @@ func newGormError(e error) GormError {
 }
 
 func CreateMessage(sender *User, recipient *User, body string) (*Message, *Conversation, error) {
+	if sender.ID == recipient.ID {
+		return nil, nil, ErrSameUser
+	}
+
 	db := db.GetDb()
 
 	conversation, err := GetConversation(sender, recipient)
