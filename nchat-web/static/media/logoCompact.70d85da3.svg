@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="39.48" height="45.402" version="1.1" viewBox="0 0 39.48 45.402" xmlns="http://www.w3.org/2000/svg">
+ <g transform="translate(-9.6323e-7 -10.288)">
+  <g transform="matrix(1.0981 0 0 1.0981 -11.363 -2.7657)" stroke-width=".91067">
+   <g transform="matrix(.70143 0 0 .70143 3.8237 -10.6)" fill="#66c072" fill-rule="evenodd" stroke-width="1.2983">
+    <path d="m22.115 44.874v46.131h-12.814l-2e-7 -58.946h38.443v12.814"/>
+    <path d="m47.744 44.874h12.814v46.131h-12.814z"/>
+   </g>
+  </g>
+ </g>
+</svg>
