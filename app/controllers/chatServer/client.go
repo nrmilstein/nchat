@@ -42,9 +42,22 @@ func (clt *client) serveChatMessages(connection *websocket.Conn, ctx context.Con
 	}()
 
 	for {
-		heartbeatCtx, cancel := context.WithTimeout(ctx, time.Second*30)
+		heartbeat, cancel := context.WithTimeout(ctx, time.Second*30)
 		defer cancel()
-		select {
+
+		select { // TODO: rearange these, put ctx.Done() at the top
+		case <-ctx.Done():
+			return ctx.Err()
+		case err := <-errs:
+			return err
+		case <-heartbeat.Done():
+			pingTimeout, cancel := context.WithTimeout(ctx, time.Second*10)
+			defer cancel()
+
+			err := connection.Ping(pingTimeout)
+			if err != nil {
+				return err
+			}
 		case msgRequest := <-msgRequests:
 			msgSent := clt.hub.relayMessage(clt.user, msgRequest)
 			if msgSent != nil {
@@ -52,19 +65,6 @@ func (clt *client) serveChatMessages(connection *websocket.Conn, ctx context.Con
 			}
 		case msgResponse := <-clt.send:
 			wsjson.Write(ctx, connection, msgResponse)
-		case err := <-errs:
-			return err
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-heartbeatCtx.Done():
-			pingTimeout, cancel := context.WithTimeout(ctx, time.Second*10)
-			defer cancel()
-
-			err := connection.Ping(pingTimeout)
-
-			if err != nil {
-				return err
-			}
 		}
 	}
 }
