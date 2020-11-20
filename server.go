@@ -57,6 +57,7 @@ func main() {
 		api.Use(middlewares.JSONContentType())
 		api.Use(middlewares.ErrorHandler())
 		api.POST("/users", controllers.PostUsers)
+		api.POST("/demoUsers", controllers.PostDemoUsers)
 		api.GET("/users/:username", controllers.GetUser)
 		api.POST("/authenticate", controllers.PostAuthenticate)
 		api.GET("/authenticate", controllers.GetAuthenticate)
