@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/nrmilstein/nchat/db"
+	"github.com/nrmilstein/nchat/utils"
 )
 
 type Message struct {
@@ -18,26 +19,6 @@ type Message struct {
 var ErrConversationNotFound = errors.New("Conversation not found.")
 var ErrTooManyConversations = errors.New("Too many conversations found between given users.")
 var ErrSameUser = errors.New("Cannot send message to self.")
-
-type GormError struct {
-	err error
-	msg string
-}
-
-func (e GormError) Error() string {
-	return e.msg
-}
-
-func (e GormError) Unwrap() error {
-	return e.err
-}
-
-func newGormError(e error) GormError {
-	return GormError{
-		err: e,
-		msg: "Gorm error: " + e.Error(),
-	}
-}
 
 func CreateMessage(sender *User, recipient *User, body string) (*Message, *Conversation, error) {
 	if sender.ID == recipient.ID {
@@ -69,7 +50,7 @@ func CreateMessage(sender *User, recipient *User, body string) (*Message, *Conve
 
 		result := db.Create(newConversation)
 		if result.Error != nil {
-			return nil, nil, newGormError(result.Error)
+			return nil, nil, utils.NewGormError(result.Error)
 		}
 
 		conversation = newConversation
@@ -77,7 +58,7 @@ func CreateMessage(sender *User, recipient *User, body string) (*Message, *Conve
 	} else {
 		err := db.Model(conversation).Association("Messages").Append(newMessage)
 		if err != nil {
-			return nil, nil, newGormError(err)
+			return nil, nil, utils.NewGormError(err)
 		}
 	}
 	return newMessage, conversation, nil
@@ -90,7 +71,7 @@ func GetConversation(sender *User, recipient *User) (*Conversation, error) {
 	err := db.Model(&sender).Preload("Users", "ID = ?", recipient.ID).
 		Association("Conversations").Find(&senderConversations)
 	if err != nil {
-		return nil, newGormError(err)
+		return nil, utils.NewGormError(err)
 	}
 
 	for _, conversation := range senderConversations {

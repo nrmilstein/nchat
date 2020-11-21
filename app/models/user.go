@@ -23,6 +23,10 @@ type User struct {
 	CreatedAt     time.Time `gorm:"not null"`
 }
 
+func CreateUser(username string, password string) { // TODO: implement this
+
+}
+
 func GetUserFromKey(key string) (*User, error) {
 	if key == "" {
 		return nil, ErrUserNotFound

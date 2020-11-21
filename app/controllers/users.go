@@ -81,7 +81,7 @@ func PostUsers(c *gin.Context) {
 	if strings.TrimSpace(username) == "" ||
 		strings.TrimSpace(password) == "" ||
 		strings.TrimSpace(name) == "" {
-		c.AbortWithError(http.StatusBadRequest, utils.AppError{"Fields cannot be empty.", 5, nil})
+		c.AbortWithError(http.StatusBadRequest, utils.AppError{"Parameters cannot be empty.", 5, nil})
 		return
 	}
 

@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -10,15 +8,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
-	"gorm.io/gorm"
 
 	"github.com/nrmilstein/nchat/app/models"
-	"github.com/nrmilstein/nchat/db"
 	"github.com/nrmilstein/nchat/utils"
 )
 
 func PostAuthenticate(c *gin.Context) {
-	db := db.GetDb()
 	invalidCredError := utils.AppError{"Invalid username/password.", 1, nil}
 
 	var params struct {
@@ -42,44 +37,19 @@ func PostAuthenticate(c *gin.Context) {
 	}
 
 	username, password := strings.ToLower(params.Username), params.Password
-	hashedPassword := models.HashPassword(password)
+	session, user, err := models.CreateSession(username, password)
 
-	var user models.User
-	readUserResult := db.Take(&user, &models.User{Username: username, Password: hashedPassword})
-
-	if errors.Is(readUserResult.Error, gorm.ErrRecordNotFound) {
-		c.AbortWithError(http.StatusUnauthorized, invalidCredError)
-		return
-	} else if readUserResult.Error != nil {
-		utils.AbortErrServer(c)
-		return
-	}
-
-	randBytes := make([]byte, 18)
-	_, err = rand.Read(randBytes)
 	if err != nil {
-		utils.AbortErrServer(c)
-		return
-	}
-	authKey := base64.URLEncoding.EncodeToString(randBytes)
-
-	session := models.Session{
-		Key:    authKey,
-		UserID: user.ID,
-	}
-	createUserResult := db.Create(&session)
-
-	if createUserResult.Error != nil {
-		utils.AbortErrServer(c)
-		return
-	}
-	if createUserResult.RowsAffected == 0 {
-		utils.AbortErrServer(c)
+		if errors.Is(err, models.ErrInvalidCred) {
+			c.AbortWithError(http.StatusUnauthorized, invalidCredError)
+		} else {
+			utils.AbortErrServer(c)
+		}
 		return
 	}
 
 	c.JSON(http.StatusCreated, utils.SuccessResponse(gin.H{
-		"authKey": authKey,
+		"authKey": session.Key,
 		"user": gin.H{
 			"id":       user.ID,
 			"username": user.Username,
