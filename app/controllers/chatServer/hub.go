@@ -154,8 +154,11 @@ func (hub *Hub) addClient(clt *client) {
 		hub.clients[clt.user.ID] = make(clientGroup)
 	}
 	hub.clients[clt.user.ID].addClient(clt)
-	log.Println("added client")
-	log.Println(hub.clients)
+
+	if gin.IsDebugging() {
+		log.Println("added client")
+		log.Println(hub.clients)
+	}
 }
 
 func (hub *Hub) removeClient(clt *client) {
@@ -166,6 +169,9 @@ func (hub *Hub) removeClient(clt *client) {
 	if len(hub.clients[clt.user.ID]) == 0 {
 		delete(hub.clients, clt.user.ID)
 	}
-	log.Println("removed client")
-	log.Println(hub.clients)
+
+	if gin.IsDebugging() {
+		log.Println("removed client")
+		log.Println(hub.clients)
+	}
 }
