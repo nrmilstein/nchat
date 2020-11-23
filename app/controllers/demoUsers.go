@@ -46,12 +46,8 @@ func PostDemoUsers(c *gin.Context) {
 	models.CreateMessage(tim, victoria, "Not too shabby Victoria. How about you?")
 	models.CreateMessage(victoria, tim, "Pretty good, pretty good.")
 	models.CreateMessage(victoria, tim, "Say, I have a question for you...")
-	models.CreateMessage(victoria, tim, "Do you ever feel like you don't exist? Like you're just "+
-		"a demo account in some web application?")
-	models.CreateMessage(tim, victoria, "Maybe...why do you ask?")
-	models.CreateMessage(victoria, tim, "No reason really. It's just, I've felt very...artificial "+
-		"lately.")
-	models.CreateMessage(victoria, tim, "Like I was just created a few seconds ago.")
+	models.CreateMessage(victoria, tim, "Do you ever feel like you're just a demo account in some "+
+		"web application?")
 	models.CreateMessage(tim, victoria, "Victoria, do you really think that if we were demo "+
 		"accounts, they would give us these normal names like Victoria Chatterbox?")
 	models.CreateMessage(victoria, tim, "You're right, Tim. If we were demo accounts, they'd "+
@@ -60,8 +56,8 @@ func PostDemoUsers(c *gin.Context) {
 	models.CreateMessage(victoria, tim, "Gee, thanks Tim! I feel loads better already.")
 	models.CreateMessage(tim, victoria, "You're welcome! Have I ever told you about the great features "+
 		"of nchat?")
-	models.CreateMessage(victoria, tim, "No...why do you bring it up?")
-	models.CreateMessage(tim, victoria, "No reason! Just something I feel like saying.")
+	models.CreateMessage(victoria, tim, "You have! I just love using nchat!")
+	models.CreateMessage(tim, victoria, "Me too!")
 	models.CreateMessage(tim, victoria, "Anyways, gotta go!")
 	models.CreateMessage(victoria, tim, "Bye!")
 
