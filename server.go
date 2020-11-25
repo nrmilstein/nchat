@@ -16,13 +16,14 @@ import (
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "5000"
+	dynoEnv := os.Getenv("DYNO")
+	if dynoEnv == "" {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
 	}
 
-	databaseUrl := os.Getenv("DATABASE_URL")
-	if databaseUrl == "" {
+	if gin.IsDebugging() {
 		psqlInfo := db.PsqlInfo{
 			Host:     "localhost",
 			Port:     5432,
@@ -32,8 +33,7 @@ func main() {
 		}
 		db.InitDbStruct(psqlInfo)
 	} else {
-		gin.SetMode(gin.ReleaseMode)
-		db.InitDb(databaseUrl)
+		db.InitDb(os.Getenv("DATABASE_URL"))
 	}
 
 	db.GetDb()
@@ -72,5 +72,9 @@ func main() {
 
 	router.NoRoute(controllers.NoRoute)
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "5000"
+	}
 	router.Run(":" + port)
 }
