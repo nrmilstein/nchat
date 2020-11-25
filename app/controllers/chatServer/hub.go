@@ -27,10 +27,17 @@ func NewHub() *Hub {
 func (hub *Hub) GetChat(c *gin.Context) {
 	writer := c.Writer
 	request := c.Request
+
+	originPatterns := []string{}
+	if gin.IsDebugging() {
+		originPatterns = []string{"localhost:3000"}
+	}
+
 	acceptOptions := &websocket.AcceptOptions{
 		Subprotocols:   []string{"nchat"},
-		OriginPatterns: []string{"localhost:3000"},
+		OriginPatterns: originPatterns,
 	}
+
 	connection, err := websocket.Accept(writer, request, acceptOptions)
 	if err != nil {
 		utils.AbortErrServer(c)
