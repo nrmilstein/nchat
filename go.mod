@@ -9,6 +9,7 @@ require (
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/heroku/x v0.0.24
 	github.com/lib/pq v1.7.0
+	github.com/unrolled/secure v1.0.1
 	gorm.io/driver/postgres v1.0.2
 	gorm.io/gorm v1.20.2
 	nhooyr.io/websocket v1.8.6

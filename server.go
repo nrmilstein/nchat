@@ -36,8 +36,6 @@ func main() {
 		db.InitDb(os.Getenv("DATABASE_URL"))
 	}
 
-	db.GetDb()
-
 	err := db.GetDb().AutoMigrate(
 		&models.Session{},
 		&models.Conversation{},
@@ -49,6 +47,9 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+
+	allowedHosts := []string{"nchat-app.herokuapp.com"}
+	router.Use(middlewares.Secure(allowedHosts, gin.IsDebugging()))
 
 	hub := chatServer.NewHub()
 
