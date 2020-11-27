@@ -17,7 +17,7 @@ func PostDemoUsers(c *gin.Context) {
 	db := db.GetDb()
 
 	tim, timPassword, err1 := getDemoUser("tim", "Tim Talkalot")
-	sarah, _, err2 := getDemoUser("sarah", "Sarah Smiley")
+	sarah, _, err2 := getDemoUser("sarah", "Sarah McSmiley")
 	nick, _, err3 := getDemoUser("nick", "Nick NewMessage")
 	victoria, _, err4 := getDemoUser("victoria", "Victoria Chatterbox")
 
