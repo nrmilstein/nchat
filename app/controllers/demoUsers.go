@@ -83,7 +83,7 @@ func PostDemoUsers(c *gin.Context) {
 }
 
 func getDemoUser(username string, name string) (*models.User, string, error) {
-	randBytes := make([]byte, 16)
+	randBytes := make([]byte, 18)
 	_, err := rand.Read(randBytes)
 	if err != nil {
 		return nil, "", err
