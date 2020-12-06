@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -23,18 +24,11 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	if gin.IsDebugging() {
-		psqlInfo := db.PsqlInfo{
-			Host:     "localhost",
-			Port:     5432,
-			User:     "nrmilstein",
-			Password: "password",
-			Dbname:   "nchat",
-		}
-		db.InitDbStruct(psqlInfo)
-	} else {
-		db.InitDb(os.Getenv("DATABASE_URL"))
+	databaseUrl := os.Getenv("DATABASE_URL")
+	if databaseUrl == "" {
+		log.Fatal("Error: no environment variale DATABASE_URL found.")
 	}
+	db.InitDb(databaseUrl)
 
 	err := db.GetDb().AutoMigrate(
 		&models.Session{},
