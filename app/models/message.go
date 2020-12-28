@@ -63,22 +63,3 @@ func CreateMessage(sender *User, recipient *User, body string) (*Message, *Conve
 	}
 	return newMessage, conversation, nil
 }
-
-func GetConversation(sender *User, recipient *User) (*Conversation, error) {
-	db := db.GetDb()
-
-	var senderConversations []Conversation
-	err := db.Model(&sender).Preload("Users", "ID = ?", recipient.ID).
-		Association("Conversations").Find(&senderConversations)
-	if err != nil {
-		return nil, utils.NewGormError(err)
-	}
-
-	for _, conversation := range senderConversations {
-		if len(conversation.Users) == 1 {
-			return &conversation, nil
-		}
-	}
-
-	return nil, ErrConversationNotFound
-}
