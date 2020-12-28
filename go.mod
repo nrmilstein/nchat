@@ -10,7 +10,7 @@ require (
 	github.com/heroku/x v0.0.24
 	github.com/lib/pq v1.7.0
 	github.com/unrolled/secure v1.0.1
-	gorm.io/driver/postgres v1.0.2
-	gorm.io/gorm v1.20.2
+	gorm.io/driver/postgres v1.0.6
+	gorm.io/gorm v1.20.9
 	nhooyr.io/websocket v1.8.6
 )

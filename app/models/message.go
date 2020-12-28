@@ -48,7 +48,7 @@ func CreateMessage(sender *User, recipient *User, body string) (*Message, *Conve
 			},
 		}
 
-		result := db.Create(newConversation)
+		result := db.Omit("Users.*").Create(newConversation)
 		if result.Error != nil {
 			return nil, nil, utils.NewGormError(result.Error)
 		}
