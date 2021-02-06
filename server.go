@@ -45,7 +45,7 @@ func main() {
 	allowedHosts := []string{"nchat-app.herokuapp.com"}
 	router.Use(middlewares.Secure(allowedHosts, gin.IsDebugging()))
 
-	hub := chatServer.NewHub()
+	chatServerHub := chatServer.NewHub()
 
 	api := router.Group("/api/v1")
 	{
@@ -58,7 +58,7 @@ func main() {
 		api.GET("/authenticate", controllers.GetAuthenticate)
 		api.GET("/conversations", controllers.GetConversations)
 		api.GET("/conversations/:id", controllers.GetConversation)
-		api.GET("/chat", controllers.GetChat(hub))
+		api.GET("/chat", controllers.GetChat(chatServerHub))
 	}
 
 	router.Use(static.Serve("/", static.LocalFile("./nchat-web", true)))
