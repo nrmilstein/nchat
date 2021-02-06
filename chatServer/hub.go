@@ -1,16 +1,12 @@
 package chatServer
 
 import (
-	"context"
 	"log"
 	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nrmilstein/nchat/app/models"
 	"github.com/nrmilstein/nchat/db"
-	"github.com/nrmilstein/nchat/utils"
-	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
 )
 
 type Hub struct {
@@ -22,66 +18,6 @@ func NewHub() *Hub {
 	return &Hub{
 		clients: make(map[int]clientGroup),
 	}
-}
-
-func (hub *Hub) GetChat(c *gin.Context) {
-	writer := c.Writer
-	request := c.Request
-
-	originPatterns := []string{}
-	if gin.IsDebugging() {
-		originPatterns = []string{"localhost:3000"}
-	}
-
-	acceptOptions := &websocket.AcceptOptions{
-		Subprotocols:   []string{"nchat"},
-		OriginPatterns: originPatterns,
-	}
-
-	connection, err := websocket.Accept(writer, request, acceptOptions)
-	if err != nil {
-		utils.AbortErrServer(c)
-		return
-	}
-	defer connection.Close(websocket.StatusInternalError, "Internal server error.")
-
-	user, err := handleAuthMessage(connection, request.Context())
-	if err != nil {
-		connection.Close(4003, "Authorization failed.")
-		return
-	}
-
-	clt := newClient(hub, user)
-	hub.addClient(clt)
-	defer hub.removeClient(clt)
-
-	err = clt.serveChatMessages(connection, request.Context())
-
-	log.Println(err)
-	connection.Close(websocket.StatusNormalClosure, "")
-}
-
-func handleAuthMessage(connection *websocket.Conn, ctx context.Context) (*models.User, error) {
-	var authRequest wsAuthRequest
-	err := wsjson.Read(ctx, connection, &authRequest)
-	if err != nil {
-		return nil, err
-	}
-
-	authKey := authRequest.Data.AuthKey
-	user, err := models.GetUserFromKey(authKey)
-	if err != nil {
-		return nil, err
-	}
-
-	authResponse := wsAuthSuccessResponse{
-		Id:     authRequest.Id,
-		Type:   "response",
-		Status: "success",
-	}
-
-	wsjson.Write(ctx, connection, authResponse)
-	return user, nil
 }
 
 func (hub *Hub) relayMessage(clt *client, msgData *wsMsgRequestData) (*wsMsgData, error) {
@@ -133,7 +69,7 @@ func (hub *Hub) relayMessage(clt *client, msgData *wsMsgRequestData) (*wsMsgData
 	return newMsgData, nil
 }
 
-func (hub *Hub) addClient(clt *client) {
+func (hub *Hub) AddClient(clt *client) {
 	hub.clientsMutex.Lock()
 	defer hub.clientsMutex.Unlock()
 
@@ -149,7 +85,7 @@ func (hub *Hub) addClient(clt *client) {
 	}
 }
 
-func (hub *Hub) removeClient(clt *client) {
+func (hub *Hub) RemoveClient(clt *client) {
 	hub.clientsMutex.Lock()
 	defer hub.clientsMutex.Unlock()
 

@@ -18,7 +18,7 @@ type client struct {
 	send chan *wsNotification
 }
 
-func newClient(hub *Hub, user *models.User) *client {
+func NewClient(hub *Hub, user *models.User) *client {
 	return &client{
 		hub:  hub,
 		user: user,
@@ -26,7 +26,7 @@ func newClient(hub *Hub, user *models.User) *client {
 	}
 }
 
-func (clt *client) serveChatMessages(connection *websocket.Conn, ctx context.Context) error {
+func (clt *client) ServeChatMessages(connection *websocket.Conn, ctx context.Context) error {
 	requests := make(chan *wsRequest)
 	errs := make(chan error)
 

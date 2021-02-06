@@ -9,9 +9,9 @@ import (
 
 	"github.com/gin-contrib/static"
 	"github.com/nrmilstein/nchat/app/controllers"
-	"github.com/nrmilstein/nchat/app/controllers/chatServer"
 	"github.com/nrmilstein/nchat/app/middlewares"
 	"github.com/nrmilstein/nchat/app/models"
+	"github.com/nrmilstein/nchat/chatServer"
 	"github.com/nrmilstein/nchat/db"
 	"github.com/nrmilstein/nchat/utils"
 )
@@ -58,7 +58,7 @@ func main() {
 		api.GET("/authenticate", controllers.GetAuthenticate)
 		api.GET("/conversations", controllers.GetConversations)
 		api.GET("/conversations/:id", controllers.GetConversation)
-		api.GET("/chat", hub.GetChat)
+		api.GET("/chat", controllers.GetChat(hub))
 	}
 
 	router.Use(static.Serve("/", static.LocalFile("./nchat-web", true)))
