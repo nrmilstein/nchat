@@ -2,6 +2,7 @@ package chatServer
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/nrmilstein/nchat/app/models"
@@ -9,35 +10,35 @@ import (
 	"nhooyr.io/websocket/wsjson"
 )
 
+var ErrRequestMethodNotFound = errors.New("WebSocket request method not found.")
+
 type client struct {
 	hub  *Hub
 	user *models.User
-	send chan *wsMsgNotification
+	send chan *wsNotification
 }
 
 func newClient(hub *Hub, user *models.User) *client {
 	return &client{
 		hub:  hub,
 		user: user,
-		send: make(chan *wsMsgNotification),
+		send: make(chan *wsNotification),
 	}
 }
 
 func (clt *client) serveChatMessages(connection *websocket.Conn, ctx context.Context) error {
-	msgRequests := make(chan *wsMsgRequest)
+	requests := make(chan *wsRequest)
 	errs := make(chan error)
 
 	go func() {
 		for ctx.Err() == nil {
-			var msgRequest wsMsgRequest
-			// TODO: do I need to use a mutex to prevent reading and writing to the connection at the same
-			//  time?
-			err := wsjson.Read(ctx, connection, &msgRequest)
+			var request wsRequest
+			err := wsjson.Read(ctx, connection, &request)
 			if err != nil {
 				errs <- err
 				return
 			}
-			msgRequests <- &msgRequest
+			requests <- &request
 		}
 	}()
 
@@ -58,14 +59,37 @@ func (clt *client) serveChatMessages(connection *websocket.Conn, ctx context.Con
 			if err != nil {
 				return err
 			}
-		case msgResponse := <-clt.send:
-			wsjson.Write(ctx, connection, msgResponse)
-		case msgRequest := <-msgRequests:
-			msgSent := clt.hub.relayMessage(clt.user, msgRequest)
-			if msgSent != nil {
-				wsjson.Write(ctx, connection, msgSent)
-			}
+		case request := <-requests:
+			go func() {
+				response, err := clt.handleWsRequest(ctx, request)
+
+				if err == nil {
+					wsjson.Write(ctx, connection, *response)
+				}
+			}()
+		case notification := <-clt.send:
+			wsjson.Write(ctx, connection, notification)
 		}
+	}
+}
+
+func (clt *client) handleWsRequest(ctx context.Context, request *wsRequest) (*wsSuccessResponse, error) {
+	switch request.Method {
+	case "sendMessage":
+		msgRequestData := &wsMsgRequestData{
+			Username: request.Data["username"],
+			Body:     request.Data["body"],
+		}
+		msgResponseData := clt.hub.relayMessage(clt, msgRequestData)
+		response := &wsSuccessResponse{
+			Id:     request.Id,
+			Type:   "response",
+			Status: "success",
+			Data:   msgResponseData,
+		}
+		return response, nil
+	default:
+		return nil, ErrRequestMethodNotFound
 	}
 }
 
@@ -79,8 +103,17 @@ func (cltGroup clientGroup) removeClient(clt *client) {
 	delete(cltGroup, clt)
 }
 
-func (cltGroup clientGroup) broadcastMessage(msg *wsMsgNotification) {
+func (cltGroup clientGroup) broadcastNotification(notification *wsNotification) {
 	for clt := range cltGroup {
-		clt.send <- msg
+		clt.send <- notification
+	}
+}
+
+func (cltGroup clientGroup) broadcastNotificationExceptToSelf(
+	notification *wsNotification, self *client) {
+	for clt := range cltGroup {
+		if clt != self {
+			clt.send <- notification
+		}
 	}
 }

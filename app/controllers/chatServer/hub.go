@@ -84,39 +84,37 @@ func handleAuthMessage(connection *websocket.Conn, ctx context.Context) (*models
 	return user, nil
 }
 
-func (hub *Hub) relayMessage(sender *models.User, msgRequest *wsMsgRequest) *wsMsgSuccessResponse {
+func (hub *Hub) relayMessage(clt *client, msgData *wsMsgRequestData) *wsMsgData {
 	db := db.GetDb()
 
+	sender := clt.user
+
 	var recipient models.User
-	result := db.Take(&recipient, &models.User{Username: msgRequest.Data.Username})
+	result := db.Take(&recipient, &models.User{Username: msgData.Username})
 	if result.Error != nil {
 		return nil
 	}
 
-	newMessage, conversation, err := models.CreateMessage(sender, &recipient, msgRequest.Data.Body)
+	newMessage, conversation, err := models.CreateMessage(sender, &recipient, msgData.Body)
 	if err != nil {
 		return nil
 	}
 
-	msgNotificaiton := &wsMsgNotification{
-		Type:   "notification",
-		Method: "newMessage",
-		Data: wsMsgNotificationData{
-			Message: wsMsgMessage{
-				Id:             newMessage.ID,
-				ConversationId: newMessage.ConversationID,
-				SenderId:       newMessage.UserID,
-				Body:           newMessage.Body,
-				CreatedAt:      newMessage.CreatedAt,
-			},
-			Conversation: wsMsgConversation{
-				Id:        conversation.ID,
-				CreatedAt: conversation.CreatedAt,
-				ConversationPartner: wsMsgConversationPartner{
-					Id:       sender.ID,
-					Username: sender.Username,
-					Name:     sender.Name,
-				},
+	newMsgData := &wsMsgData{
+		Message: wsMsgMessage{
+			Id:             newMessage.ID,
+			ConversationId: newMessage.ConversationID,
+			SenderId:       newMessage.UserID,
+			Body:           newMessage.Body,
+			CreatedAt:      newMessage.CreatedAt,
+		},
+		Conversation: wsMsgConversation{
+			Id:        conversation.ID,
+			CreatedAt: conversation.CreatedAt,
+			ConversationPartner: wsMsgConversationPartner{
+				Id:       sender.ID,
+				Username: sender.Username,
+				Name:     sender.Name,
 			},
 		},
 	}
@@ -124,32 +122,15 @@ func (hub *Hub) relayMessage(sender *models.User, msgRequest *wsMsgRequest) *wsM
 	hub.clientsMutex.RLock()
 	defer hub.clientsMutex.RUnlock()
 
-	hub.clients[recipient.ID].broadcastMessage(msgNotificaiton)
-
-	msgResponse := &wsMsgSuccessResponse{
-		Id:     msgRequest.Id,
-		Type:   "response",
-		Status: "success",
-		Data: wsMsgSuccessResponseData{
-			Message: wsMsgMessage{
-				Id:             newMessage.ID,
-				ConversationId: newMessage.ConversationID,
-				SenderId:       newMessage.UserID,
-				Body:           newMessage.Body,
-				CreatedAt:      newMessage.CreatedAt,
-			},
-			Conversation: wsMsgConversation{
-				Id:        conversation.ID,
-				CreatedAt: conversation.CreatedAt,
-				ConversationPartner: wsMsgConversationPartner{
-					Id:       recipient.ID,
-					Username: recipient.Username,
-					Name:     recipient.Name,
-				},
-			},
-		},
+	newMsgNotification := wsNotification{
+		Type:   "notification",
+		Method: "newMessage",
+		Data:   newMsgData,
 	}
-	return msgResponse
+	hub.clients[recipient.ID].broadcastNotification(&newMsgNotification)
+	hub.clients[sender.ID].broadcastNotificationExceptToSelf(&newMsgNotification, clt)
+
+	return newMsgData
 }
 
 func (hub *Hub) addClient(clt *client) {
