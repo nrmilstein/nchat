@@ -84,7 +84,7 @@ func handleAuthMessage(connection *websocket.Conn, ctx context.Context) (*models
 	return user, nil
 }
 
-func (hub *Hub) relayMessage(clt *client, msgData *wsMsgRequestData) *wsMsgData {
+func (hub *Hub) relayMessage(clt *client, msgData *wsMsgRequestData) (*wsMsgData, error) {
 	db := db.GetDb()
 
 	sender := clt.user
@@ -92,12 +92,12 @@ func (hub *Hub) relayMessage(clt *client, msgData *wsMsgRequestData) *wsMsgData 
 	var recipient models.User
 	result := db.Take(&recipient, &models.User{Username: msgData.Username})
 	if result.Error != nil {
-		return nil
+		return nil, result.Error
 	}
 
 	newMessage, conversation, err := models.CreateMessage(sender, &recipient, msgData.Body)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	newMsgData := &wsMsgData{
@@ -130,7 +130,7 @@ func (hub *Hub) relayMessage(clt *client, msgData *wsMsgRequestData) *wsMsgData 
 	hub.clients[recipient.ID].broadcastNotification(&newMsgNotification)
 	hub.clients[sender.ID].broadcastNotificationExceptToSelf(&newMsgNotification, clt)
 
-	return newMsgData
+	return newMsgData, nil
 }
 
 func (hub *Hub) addClient(clt *client) {

@@ -80,7 +80,12 @@ func (clt *client) handleWsRequest(ctx context.Context, request *wsRequest) (*ws
 			Username: request.Data["username"],
 			Body:     request.Data["body"],
 		}
-		msgResponseData := clt.hub.relayMessage(clt, msgRequestData)
+
+		msgResponseData, err := clt.hub.relayMessage(clt, msgRequestData)
+		if err != nil {
+			return nil, err
+		}
+
 		response := &wsSuccessResponse{
 			Id:     request.Id,
 			Type:   "response",
