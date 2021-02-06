@@ -1,11 +1,14 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/nrmilstein/nchat/db"
 	"github.com/nrmilstein/nchat/utils"
 )
+
+var ErrConversationNotFound = errors.New("Conversation not found.")
 
 type Conversation struct {
 	ID        int    `gorm:"primaryKey,not null"`

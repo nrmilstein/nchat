@@ -16,7 +16,6 @@ type Message struct {
 	CreatedAt      time.Time `gorm:"not null"`
 }
 
-var ErrConversationNotFound = errors.New("Conversation not found.")
 var ErrTooManyConversations = errors.New("Too many conversations found between given users.")
 var ErrSameUser = errors.New("Cannot send message to self.")
 
