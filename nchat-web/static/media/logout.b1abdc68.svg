@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="40" height="40" version="1.1" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+ <g stroke="#bababa" stroke-linejoin="round">
+  <path class="LogoutIcon__hoverStroke" d="m23.66 10.666v-5.6004h-19.33v29.869h19.33v-5.6004" fill="none" stroke-linecap="round" stroke-width="5.9988"/>
+  <path class="LogoutIcon__hoverFill" d="m16.192 17.434h13.998v-5.1316l8.932 7.6974-8.932 7.6974v-5.1316h-13.998z" fill="#bababa" stroke-width=".9998"/>
+ </g>
+</svg>
